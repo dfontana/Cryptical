@@ -11,7 +11,7 @@ class Client(gdax.WebsocketClient):
         super(Client, self).__init__(url, products, message_type)
 
     def on_message(self, msg):
-        self.message_count += 1
-        if 'price' in msg and 'type' in msg:
-            print ("Message type:", msg["type"],
-                   "\t@ {}.3f".format(float(msg["price"])))
+        if msg["type"] == "match":
+            value = float(msg["price"])
+            print("Value: ", value)
+            self.message_count += 1
