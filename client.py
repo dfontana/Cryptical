@@ -17,4 +17,11 @@ class Client(gdax.WebsocketClient):
     def on_message(self, msg):
         if msg["type"] == "match":
             value = float(msg["price"])
-            requests.post(DATA["url"]+DATA["key"], params={'value1' : str(value)})
+            if value_is_abnormal(value):
+                requests.post(DATA["url"]+DATA["key"], params={'value1' : str(value)})
+
+def value_is_abnormal(value):
+    """
+    Determines if the given value is worthy of notifying the user
+    """
+    return True
