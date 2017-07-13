@@ -45,6 +45,6 @@ def process_time_frame(start_frame, end_frame):
         row[0] = datetime.datetime.fromtimestamp(row[0]).strftime('%x %X')
         WRITER.writerow(row)
 
-START = datetime.datetime(2017, 7, 12, 21, 0)
-END = datetime.datetime.now()
+START = datetime.datetime(2017, 1, 1, 6, 0)
+END = datetime.datetime(2017, 7, 12, 22, 0)
 main(START, END)

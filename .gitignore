@@ -1,7 +1,9 @@
+.vscode
+.DS_STORE
 bin
 .Python
 include
 lib
 *.pyc
 *.json
-secret.json
+*.csv
