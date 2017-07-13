@@ -1,4 +1,23 @@
 """ This is a script for obtaining time series data from GDAX """
+
+
+
+
+"""
+
+TODO:
+    - Make the parts folder if its not on disk
+    - Move header file out of the parts folder into the main directory.
+    - Concatenate all files of a wave into the HEADER file after they finish and before starting the next wave.
+        - Consider doing it every X number of waves, wiping the parts folder after the merge, and then when all
+        threads are done processing in full concatenate any remaining files in the parts folder before deleting it.
+
+"""
+
+
+
+
+
 import datetime
 import csv
 import threading
