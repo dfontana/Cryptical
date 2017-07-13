@@ -1,6 +1,9 @@
 """ This is a script for obtaining time series data from GDAX """
-
-
+import datetime
+import csv
+import threading
+from itertools import zip_longest
+import gdax
 
 
 """
@@ -8,21 +11,14 @@
 TODO:
     - Make the parts folder if its not on disk
     - Move header file out of the parts folder into the main directory.
-    - Concatenate all files of a wave into the HEADER file after they finish and before starting the next wave.
-        - Consider doing it every X number of waves, wiping the parts folder after the merge, and then when all
-        threads are done processing in full concatenate any remaining files in the parts folder before deleting it.
+    - Concatenate all files of a wave into the HEADER file after they finish
+    and before starting the next wave.
+        - Consider doing it every X number of waves, wiping the parts folder after
+        the merge, and then when all threads are done processing in full concatenate
+        any remaining files in the parts folder before deleting it.
 
 """
 
-
-
-
-
-import datetime
-import csv
-import threading
-from itertools import izip_longest
-import gdax
 
 CLIENT = gdax.PublicClient()
 GRANULARITY = 1 # second
@@ -33,7 +29,7 @@ def main(srttime=None, endtime=None):
     Breaks down the given time period into digestable request "chunks" that
     the GDAX API can process. Outputs results into a CSV file.
     """
-    with open('parts/part_header.csv', 'wb') as the_file:
+    with open('part_header.csv', 'w') as the_file:
         writer = csv.writer(the_file, dialect='excel')
         writer.writerow(['time', 'low', 'high', 'open', 'close', 'volume'])
 
@@ -41,7 +37,7 @@ def main(srttime=None, endtime=None):
     threads = []
 
     # Build thread queue
-    print "Constructing Threads..."
+    print("Constructing Threads...")
     thread_count = 0
     if requests > 200:
         start_frame = srttime
@@ -63,10 +59,10 @@ def main(srttime=None, endtime=None):
 
     # Unleash the threads
     print(str(len(threads)) + " threads constructed.")
-    print "Unleashing the Kraken (In waves)..."
+    print("Unleashing the Kraken (In waves)...")
     wave_index = 1
     for group in grouper(WAVE_SIZE, threads):
-        print "\tStarting Wave " + str(wave_index) + "/" + str(len(threads))
+        print("\tStarting Wave " + str(wave_index) + "/" + str(len(threads)))
         for thr in group:
             if thr is None:
                 continue
@@ -81,7 +77,7 @@ def main(srttime=None, endtime=None):
         wave_index += 1
 
     # Seal the deal.
-    print "The Seas Have Settled."
+    print("The Seas Have Settled.")
 
 def process_time_frame(start_frame, end_frame, thread_count):
     """
@@ -93,7 +89,7 @@ def process_time_frame(start_frame, end_frame, thread_count):
     subarray = CLIENT.get_product_historic_rates('ETH-USD', start=start_frame,
                                                  end=end_frame, granularity=GRANULARITY)
 
-    with open('parts/part_'+str(thread_count)+'.csv', 'wb') as the_file:
+    with open('parts/part_'+str(thread_count)+'.csv', 'w') as the_file:
         writer = csv.writer(the_file, dialect='excel')
         for row in subarray:
             if row[0] == 'm':
@@ -107,7 +103,7 @@ def grouper(chunk_size, iterable, fillvalue=None):
     with None by default.
     """
     args = [iter(iterable)] * chunk_size
-    return izip_longest(fillvalue=fillvalue, *args)
+    return zip_longest(fillvalue=fillvalue, *args)
 
 START = datetime.datetime(2017, 1, 1, 6, 0)
 END = datetime.datetime.now()

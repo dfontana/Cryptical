@@ -5,7 +5,7 @@ import gdax
 
 CLIENT = gdax.PublicClient()
 GRANULARITY = 1 # second
-OUT_FILE = open("data_points.csv", 'wb')
+OUT_FILE = open("data_points.csv", 'w')
 WRITER = csv.writer(OUT_FILE, dialect='excel')
 
 def main(srttime=None, endtime=None):
@@ -45,6 +45,6 @@ def process_time_frame(start_frame, end_frame):
         row[0] = datetime.datetime.fromtimestamp(row[0]).strftime('%x %X')
         WRITER.writerow(row)
 
-START = datetime.datetime(2017, 1, 1, 6, 0)
+START = datetime.datetime(2017, 7, 12, 21, 0)
 END = datetime.datetime(2017, 7, 12, 22, 0)
 main(START, END)
