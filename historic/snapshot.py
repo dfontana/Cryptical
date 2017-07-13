@@ -1,32 +1,50 @@
-""" This is a module for processing messages """
+""" This is a script for obtaining time series data from GDAX """
 import datetime
+import csv
 import gdax
 
 CLIENT = gdax.PublicClient()
+GRANULARITY = 1 # second
+OUT_FILE = open("data_points.csv", 'wb')
+WRITER = csv.writer(OUT_FILE, dialect='excel')
 
 def main(srttime=None, endtime=None):
     """
-    Doc string
+    Breaks down the given time period into digestable request "chunks" that
+    the GDAX API can process. Outputs results into a CSV file.
     """
-    gran = 1 # second
+    WRITER.writerow(['time', 'low', 'high', 'open', 'close', 'volume'])
 
-    result_dict = {}
+    requests = (endtime-srttime).total_seconds() / GRANULARITY
 
-    requests = (endtime-srttime).total_seconds() / gran
     if requests > 200:
         start_frame = srttime
-        end_frame = start_frame + datetime.timedelta(seconds=gran*200)
+        end_frame = start_frame + datetime.timedelta(seconds=GRANULARITY*200)
         while end_frame <= endtime:
-            result_dict.update(CLIENT.get_product_historic_rates('ETH-USD', start=start_frame, end=end_frame, granularity=gran))
-            start_frame = end_frame + datetime.timedelta(seconds=gran)
-            end_frame = start_frame + datetime.timedelta(seconds=gran*200)
+            process_time_frame(start_frame, end_frame)
+            start_frame = end_frame + datetime.timedelta(seconds=GRANULARITY)
+            end_frame = start_frame + datetime.timedelta(seconds=GRANULARITY*200)
         if end_frame > endtime:
-            # there's extra, need one last request
-            result_dict.update(CLIENT.get_product_historic_rates('ETH-USD', start=start_frame, end=endtime, granularity=gran))
+            process_time_frame(start_frame, endtime)
     else:
-        result_dict.update(CLIENT.get_product_historic_rates('ETH-USD', start=srttime, end=endtime, granularity=gran))
-    return result_dict
+        process_time_frame(srttime, endtime)
+    OUT_FILE.close()
 
-START = datetime.datetime(2017, 1, 1, 8, 0)
+def process_time_frame(start_frame, end_frame):
+    """
+    Makes a call to the historic endpoint for the given time period, writing results
+    to file. Sometimes the API returns "message" - that data row is filtered out.
+    Additionally, the timestamp is in epoch time - which has been converted to
+    human readable output in UTC time.
+    """
+    subarray = CLIENT.get_product_historic_rates('ETH-USD', start=start_frame,
+                                                 end=end_frame, granularity=GRANULARITY)
+    for row in subarray:
+        if row[0] == 'm':
+            break
+        row[0] = datetime.datetime.fromtimestamp(row[0]).strftime('%x %X')
+        WRITER.writerow(row)
+
+START = datetime.datetime(2017, 7, 12, 21, 0)
 END = datetime.datetime.now()
-print main(START, END)
+main(START, END)
