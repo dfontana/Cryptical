@@ -7,20 +7,6 @@ import threading
 from itertools import zip_longest
 import gdax
 
-
-"""
-
-TODO:
-    - Make the parts folder if its not on disk
-    - Concatenate all files of a wave into the HEADER file after they finish
-    and before starting the next wave.
-        - Consider doing it every X number of waves, wiping the parts folder after
-        the merge, and then when all threads are done processing in full concatenate
-        any remaining files in the parts folder before deleting it.
-
-"""
-
-
 CLIENT = gdax.PublicClient()
 GRANULARITY = 1 # second
 WAVE_SIZE = 7
@@ -35,37 +21,31 @@ def main(srttime=None, endtime=None):
         writer.writerow(['time', 'low', 'high', 'open', 'close', 'volume'])
 
     requests = (endtime-srttime).total_seconds() / GRANULARITY
-    threads = []
 
     # Build thread queue
     print("Constructing Threads...")
-    thread_count = 0
-    if requests > 200:
-        start_frame = srttime
-        end_frame = start_frame + datetime.timedelta(seconds=GRANULARITY*200)
-        while end_frame <= endtime:
-            thread = threading.Thread(target=process_time_frame, args=(start_frame, end_frame, thread_count))
-            threads.append(thread)
-            thread_count += 1
-            start_frame = end_frame + datetime.timedelta(seconds=GRANULARITY)
-            end_frame = start_frame + datetime.timedelta(seconds=GRANULARITY*200)
-        if end_frame > endtime:
-            thread = threading.Thread(target=process_time_frame, args=(start_frame, endtime, thread_count))
-            threads.append(thread)
-            thread_count += 1
-    else:
-        thread = threading.Thread(target=process_time_frame, args=(srttime, endtime, thread_count))
-        threads.append(thread)
-        thread_count += 1
+    threads = define_threads(requests, srttime, endtime)
 
     # Unleash the threads
     print(str(len(threads)) + " threads constructed.")
     print("Unleashing the Kraken (In waves)...")
-    
     if not os.path.exists("parts"):
         os.makedirs("parts")
     out_file = open("part_master.csv", "a")
+    process_threads(out_file, threads)
 
+    # Seal the deal.
+    out_file.close()
+    print("The Seas Have Settled.")
+
+
+
+def process_threads(out_file, threads):
+    """
+    Iterates over threads in groups of WAVE_SIZE, asynchronously grabbing data,
+    writing to a part file, and then merging the parts into the out_file after
+    all threads finish.
+    """
     wave_index = 1
     wave_size = 0
     for group in grouper(WAVE_SIZE, threads):
@@ -82,14 +62,32 @@ def main(srttime=None, endtime=None):
                 continue
             else:
                 thr.join()
-
-        print("\tStitching the masts")
         write_parts_to_master(out_file)
         wave_index += 1
 
-    # Seal the deal.
-    out_file.close()
-    print("The Seas Have Settled.")
+
+
+def define_threads(requests, srttime, endtime):
+    """
+    Builds an array of threads to process, where each thread handles a chunk of time
+    """
+    ths = []
+    count = 0
+    if requests > 200:
+        sframe = srttime
+        eframe = sframe + datetime.timedelta(seconds=GRANULARITY*200)
+        while eframe <= endtime:
+            ths.append(threading.Thread(target=process_frame, args=(sframe, eframe, count)))
+            sframe = eframe + datetime.timedelta(seconds=GRANULARITY)
+            eframe = sframe + datetime.timedelta(seconds=GRANULARITY*200)
+            count += 1
+        if eframe > endtime:
+            ths.append(threading.Thread(target=process_frame, args=(sframe, endtime, count)))
+    else:
+        ths.append(threading.Thread(target=process_frame, args=(srttime, endtime, count)))
+    return ths
+
+
 
 def write_parts_to_master(out_file):
     """
@@ -103,7 +101,9 @@ def write_parts_to_master(out_file):
     shutil.rmtree("parts")
     os.makedirs("parts")
 
-def process_time_frame(start_frame, end_frame, thread_count):
+
+
+def process_frame(start_frame, end_frame, thread_count):
     """
     Makes a call to the historic endpoint for the given time period, writing results
     to file. Sometimes the API returns "message" - that data row is filtered out.
@@ -122,6 +122,7 @@ def process_time_frame(start_frame, end_frame, thread_count):
             writer.writerow(row)
 
 
+
 def grouper(chunk_size, iterable, fillvalue=None):
     """
     Splits an array into chunk_sized subarrays, filling in empty spaces
@@ -129,6 +130,8 @@ def grouper(chunk_size, iterable, fillvalue=None):
     """
     args = [iter(iterable)] * chunk_size
     return zip_longest(fillvalue=fillvalue, *args)
+
+
 
 START = datetime.datetime(2017, 1, 1, 6, 0)
 END = datetime.datetime.now()
