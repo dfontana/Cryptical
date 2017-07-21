@@ -49,7 +49,7 @@ def process_threads(out_file, threads):
     wave_index = 1
     wave_size = 0
     for group in grouper(WAVE_SIZE, threads):
-        print("\tStarting Wave " + str(wave_index) + "/" + str(len(threads)))
+        print("\tStarting Wave " + str(wave_index) + "/" + str(len(threads)/WAVE_SIZE))
         for thr in group:
             if thr is None:
                 continue
