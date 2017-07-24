@@ -4,6 +4,7 @@ import (
     "encoding/json"
     "fmt"
     "log"
+    "math"
     "time"
     "net/http"
     "net/url"
@@ -12,9 +13,9 @@ import (
 var (
     baseUrl = "https://api.gdax.com"
     historic = "/products/ETH-USD/candles"
-    startTime = time.Date(2017, time.January, 1, 0 , 0, 0, 0, time.UTC)
-    endTime = time.Now().UTC()
-    granularity = 1 //Seconds
+    startTime = time.Date(2017, time.July, 23, 10 , 0, 0, 0, time.Local)
+    endTime = time.Now()
+    granularity = 30 //Seconds
 )
 
 
@@ -61,7 +62,7 @@ func process_frame(sframe time.Time, eframe time.Time) []Record {
 func main() {
     var records []Record
 
-    requests :=  endTime.Sub(startTime).Seconds() / float64(granularity)
+    requests :=  math.Ceil(endTime.Sub(startTime).Seconds() / float64(granularity))
     if requests > 200 {
         shortDuration := time.Duration(granularity) * time.Second
         longDuration := time.Duration(200*granularity) * time.Second
