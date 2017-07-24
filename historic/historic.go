@@ -15,7 +15,7 @@ var (
     historic = "/products/ETH-USD/candles"
     startTime = time.Date(2017, time.July, 23, 10 , 0, 0, 0, time.Local)
     endTime = time.Now()
-    granularity = 30 //Seconds
+    granularity = 1 //Seconds
 )
 
 
@@ -54,7 +54,7 @@ func process_frame(sframe time.Time, eframe time.Time) []Record {
 
     var records []Record
     err = json.NewDecoder(res.Body).Decode(&records)
-    if err != nil { log.Fatal(err) }
+    if err != nil { fmt.Errorf("Error: ", err) }
 
     return records
 }
