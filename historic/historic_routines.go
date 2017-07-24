@@ -1,5 +1,7 @@
 package main
 
+// See this playground for using routines + a result channel to aggregate all the JSON data before outputting it to a CSV. https://play.golang.org/p/x7I8ikHFnR
+
 import (
     "os"
     "encoding/csv"
