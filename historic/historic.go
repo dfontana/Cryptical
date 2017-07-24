@@ -1,11 +1,14 @@
 package main
 
 import (
+    "os"
+    "encoding/csv"
     "encoding/json"
     "fmt"
     "log"
     "math"
     "time"
+    "strconv"
     "net/http"
     "net/url"
 )
@@ -80,5 +83,23 @@ func main() {
         records = append(records, process_frame(startTime, endTime)...)
     }
 
-    fmt.Println(records)
+    f, err := os.Create("./output.csv")
+    if err != nil {
+        fmt.Errorf("Error: ", err)
+    }
+    defer f.Close()
+
+    w := csv.NewWriter(f)
+    for _, obj := range records {
+        var item []string
+        item = append(item, strconv.FormatInt(int64(obj.time),10))
+        item = append(item, strconv.FormatFloat(float64(obj.low), 'f', -1, 32))
+        item = append(item, strconv.FormatFloat(float64(obj.high), 'f', -1, 32))
+        item = append(item, strconv.FormatFloat(float64(obj.open), 'f', -1, 32))
+        item = append(item, strconv.FormatFloat(float64(obj.close), 'f', -1, 32))
+        item = append(item, strconv.FormatFloat(float64(obj.volume), 'f', -1, 32))
+
+        w.Write(item)
+    }
+    w.Flush()
 }
