@@ -3,8 +3,7 @@ import datetime
 import os
 import shutil
 import csv
-import threading
-from itertools import zip_longest
+from multiprocessing.pool import ThreadPool
 import gdax
 
 CLIENT = gdax.PublicClient()
@@ -23,48 +22,23 @@ def main(srttime=None, endtime=None):
     requests = (endtime-srttime).total_seconds() / GRANULARITY
 
     # Build thread queue
-    print("Constructing Threads...")
+    print("Constructing Ship...")
     threads = define_threads(requests, srttime, endtime)
-
-    # Unleash the threads
-    print(str(len(threads)) + " threads constructed.")
-    print("Unleashing the Kraken (In waves)...")
     if not os.path.exists("parts"):
         os.makedirs("parts")
     out_file = open("part_master.csv", "a")
-    process_threads(out_file, threads)
+
+    # Unleash the threads
+    print("Unleashing the Kraken...")
+    pool = ThreadPool(processes=4)
+    pool.map(lambda s: process_frame(s[0], s[1], s[2]), threads)
+    pool.close()
+    pool.join()
 
     # Seal the deal.
+    write_parts_to_master(out_file)
     out_file.close()
     print("The Seas Have Settled.")
-
-
-
-def process_threads(out_file, threads):
-    """
-    Iterates over threads in groups of WAVE_SIZE, asynchronously grabbing data,
-    writing to a part file, and then merging the parts into the out_file after
-    all threads finish.
-    """
-    wave_index = 1
-    wave_size = 0
-    for group in grouper(WAVE_SIZE, threads):
-        print("\tStarting Wave " + str(wave_index) + "/" + str(len(threads)/WAVE_SIZE))
-        for thr in group:
-            if thr is None:
-                continue
-            else:
-                wave_size += 1
-                thr.start()
-
-        for thr in group:
-            if thr is None:
-                continue
-            else:
-                thr.join()
-        write_parts_to_master(out_file)
-        wave_index += 1
-
 
 
 def define_threads(requests, srttime, endtime):
@@ -77,14 +51,14 @@ def define_threads(requests, srttime, endtime):
         sframe = srttime
         eframe = sframe + datetime.timedelta(seconds=GRANULARITY*200)
         while eframe <= endtime:
-            ths.append(threading.Thread(target=process_frame, args=(sframe, eframe, count)))
+            ths.append([sframe, eframe, count])
             sframe = eframe + datetime.timedelta(seconds=GRANULARITY)
             eframe = sframe + datetime.timedelta(seconds=GRANULARITY*200)
             count += 1
         if eframe > endtime:
-            ths.append(threading.Thread(target=process_frame, args=(sframe, endtime, count)))
+            ths.append([sframe, eframe, count])
     else:
-        ths.append(threading.Thread(target=process_frame, args=(srttime, endtime, count)))
+        ths.append([sframe, eframe, count])
     return ths
 
 
@@ -98,8 +72,6 @@ def write_parts_to_master(out_file):
         with open("parts/"+filename) as part:
             for line in part:
                 out_file.write(line)
-    shutil.rmtree("parts")
-    os.makedirs("parts")
 
 
 
@@ -110,6 +82,7 @@ def process_frame(start_frame, end_frame, thread_count):
     Additionally, the timestamp is in epoch time - which has been converted to
     human readable output in UTC time.
     """
+    print(start_frame, end_frame)
     subarray = CLIENT.get_product_historic_rates('ETH-USD', start=start_frame,
                                                  end=end_frame, granularity=GRANULARITY)
 
@@ -121,18 +94,6 @@ def process_frame(start_frame, end_frame, thread_count):
             row[0] = datetime.datetime.fromtimestamp(row[0]).strftime('%x %X')
             writer.writerow(row)
 
-
-
-def grouper(chunk_size, iterable, fillvalue=None):
-    """
-    Splits an array into chunk_sized subarrays, filling in empty spaces
-    with None by default.
-    """
-    args = [iter(iterable)] * chunk_size
-    return zip_longest(fillvalue=fillvalue, *args)
-
-
-
-START = datetime.datetime(2017, 1, 1, 6, 0)
+START = datetime.datetime(2017, 7, 30, hour=19)
 END = datetime.datetime.now()
 main(START, END)
