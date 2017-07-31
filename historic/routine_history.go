@@ -5,14 +5,14 @@ package main
 // Also read up on this to learn how to properly do this: http://guzalexander.com/2013/12/06/golang-channels-tutorial.html
 
 import (
-    "os"
-    "encoding/csv"
+    //"os"
+    //"encoding/csv"
     "encoding/json"
     "fmt"
     "log"
     "math"
     "time"
-    "strconv"
+    //"strconv"
     "net/http"
     "net/url"
 )
@@ -44,7 +44,8 @@ func (n *Record) UnmarshalJSON(buf []byte) error {
     return nil
 }
 
-func process_frame(sframe time.Time, eframe time.Time) []Record {
+// Grabs the given time frame from the API, returning the data in array of structs.
+func request_frame(sframe time.Time, eframe time.Time) []Record {
     url := fmt.Sprintf("%s%s?granularity=%d&start=%s&end=%s",
         baseUrl,
         historic,
@@ -66,44 +67,53 @@ func process_frame(sframe time.Time, eframe time.Time) []Record {
     return records
 }
 
-func main() {
-    var records []Record
+// Computes what time frames to request from the API, working within their limits.
+func determine_frames(starttime time.Time, endtime time.Time) []time.Time {
+    var frames []time.Time
 
-    requests :=  math.Ceil(endTime.Sub(startTime).Seconds() / float64(granularity))
+    requests :=  math.Ceil(endtime.Sub(starttime).Seconds() / float64(granularity))
     if requests > 200 {
         shortDuration := time.Duration(granularity) * time.Second
         longDuration := time.Duration(200*granularity) * time.Second
-        sframe := startTime
+        sframe := starttime
         eframe := sframe.Add(longDuration)
-        for eframe.Before(endTime) {
-            records = append(records, process_frame(sframe, eframe)...)
+        for eframe.Before(endtime) {
+            frames = append(frames, []time.Time{sframe, eframe}...)
             sframe = eframe.Add(shortDuration)
             eframe = sframe.Add(longDuration)
         }
         if eframe.After(endTime) {
-            records = append(records, process_frame(sframe, endTime)...)
+            frames = append(frames, []time.Time{sframe, endtime}...)
         }
     }else{
-        records = append(records, process_frame(startTime, endTime)...)
+        frames = append(frames, []time.Time{starttime, endtime}...)
     }
 
-    f, err := os.Create("./output.csv")
-    if err != nil {
-        fmt.Errorf("Error: ", err)
-    }
-    defer f.Close()
+    return frames
+}
 
-    w := csv.NewWriter(f)
-    for _, obj := range records {
-        var item []string
-        item = append(item, strconv.FormatInt(int64(obj.time),10))
-        item = append(item, strconv.FormatFloat(float64(obj.low), 'f', -1, 32))
-        item = append(item, strconv.FormatFloat(float64(obj.high), 'f', -1, 32))
-        item = append(item, strconv.FormatFloat(float64(obj.open), 'f', -1, 32))
-        item = append(item, strconv.FormatFloat(float64(obj.close), 'f', -1, 32))
-        item = append(item, strconv.FormatFloat(float64(obj.volume), 'f', -1, 32))
+func main() {
+    //var records []Record
 
-        w.Write(item)
-    }
-    w.Flush()
+    frames := determine_frames(startTime, endTime)
+
+    //f, err := os.Create("./output.csv")
+    //if err != nil {
+    //    fmt.Errorf("Error: ", err)
+    //}
+    //defer f.Close()
+
+    //w := csv.NewWriter(f)
+    //for _, obj := range records {
+    //    var item []string
+    //    item = append(item, strconv.FormatInt(int64(obj.time),10))
+    //    item = append(item, strconv.FormatFloat(float64(obj.low), 'f', -1, 32))
+    //    item = append(item, strconv.FormatFloat(float64(obj.high), 'f', -1, 32))
+    //    item = append(item, strconv.FormatFloat(float64(obj.open), 'f', -1, 32))
+    //    item = append(item, strconv.FormatFloat(float64(obj.close), 'f', -1, 32))
+    //    item = append(item, strconv.FormatFloat(float64(obj.volume), 'f', -1, 32))
+
+    //    w.Write(item)
+    //}
+    //w.Flush()
 }
