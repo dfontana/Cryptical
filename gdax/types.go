@@ -1,5 +1,9 @@
 package gdax
 
+import (
+	"encoding/json"
+)
+
 type GDAX struct {
 	Enabled	bool
 	Currencies []string
@@ -56,4 +60,13 @@ type Record struct {
 	Open   float64	`json:"open"`
 	Close  float64	`json:"close"`
 	Volume float64	`json:"volume"`
+}
+
+// UnmarshalJSON handles decomposing the returned array from GDAX into a series of record structs.
+func (n *Record) UnmarshalJSON(buf []byte) error {
+	tmp := []interface{}{&n.Time, &n.Low, &n.High, &n.Open, &n.Close, &n.Volume}
+	if err := json.Unmarshal(buf, &tmp); err != nil {
+		return err
+	}
+	return nil
 }
