@@ -64,48 +64,53 @@ func handleEvent(resp []byte) (WebsocketMatch, error) {
 	return message, fmt.Errorf("Unsupported message recived")
 }
 
-func (g *GDAX) Live(messages chan WebsocketMatch, errors chan error) {
+func (g *GDAX) Live(messages chan WebsocketMatch, quit chan bool) {
 	var Dialer websocket.Dialer
 	conn, _, err := Dialer.Dial(GDAX_WEBSOCKET_URL, http.Header{})
 	if err != nil {
-		errors <- fmt.Errorf("Unable to connect to Websocket. Error: %s\n", err)
+		log.Printf("Unable to connect to Websocket. Error: %s\n", err)
 		close(messages)
 		return
 	}
 
-	defer func(){
+	cleanup := func(){
 		conn.Close()
 		log.Println("Websocket client disconnected.")
-	}()
+		close(messages)
+	}
 
 	log.Println("Connected to Websocket.")
 
 	for _, x := range g.Currencies {
 		if err = g.WebsocketSubscribe(x, conn); err != nil {
-			errors <- fmt.Errorf("Websocket subscription error: %s\n", err)
-			close(messages)
+			log.Printf("Websocket subscription error: %s\n", err)
+			cleanup()
 			return
 		}
 	}
 
 	log.Println("Subscribed to product messages.")
 
-	for g.Enabled {
-		_, resp, err := conn.ReadMessage();
-		if err != nil {
-			errors <- err
-			close(messages)
-			return
+	// Poll the quit channel. If you are told to quit, close messages and return.
+	for {
+		select {
+			case <- quit:
+				cleanup()
+				return
+			default:
+				_, resp, err := conn.ReadMessage();
+				if err != nil {
+					log.Println(err)
+					cleanup()
+					return
+				}
+		
+				data, err := handleEvent(resp); 
+				if err != nil {
+					continue
+				}
+		
+				messages <- data
 		}
-
-		data, err := handleEvent(resp); 
-		if err != nil {
-			continue
-		}
-
-		messages <- data
 	}
-
-	close(errors)
-	close(messages)
 }

@@ -34,25 +34,18 @@ func gdaxLive(){
 	g := gdax.GDAX{true, []string{"ETH-USD"}}
 
 	// Asynchronously fetch data to messages channel.
-	// If a fatal error occurs, a message is sent to errors 
-	errors := make(chan error)
 	messages := make(chan gdax.WebsocketMatch)
-	go g.Live(messages, errors)
+	quit := make(chan bool)
+	go g.Live(messages, quit)
 
-	// Kill the livefeed after 5 seconds.
+	// Kill the livefeed after 10 seconds.
 	go func(){
-		time.Sleep(5 * time.Second)
-		g.Enabled = false
+		time.Sleep(10 * time.Second)
+		quit <- true
 	}()
 
 	// Loop until something stops the socket feed (error or disabled)
 	for msg := range messages{
 		log.Println(msg)
-	}
-
-	// If loop broke due to error, print it now
-	err := <-errors
-	if err != nil {
-		log.Println(err)
 	}
 }
