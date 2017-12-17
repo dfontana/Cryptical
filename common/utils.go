@@ -30,18 +30,24 @@ func SimpleGet(url string, into interface{}) error {
 	return nil
 }
 
-func WriteToCSV(path string, records [][]string) error {
+// WriteToCSV is a routine that will write incoming items to a CSV
+// at the given path. Should an error occur, it is sent into the given
+// error channel and the routine terminates.
+func WriteToCSV(path string, items chan []string, errors chan error) {
 	f, err := os.Create(path)
+
+	// Terminate early, sending our error to caller channel
 	if err != nil {
-		return err
+		errors<-err
+		return
 	}
+
 	defer f.Close()
 
 	w := csv.NewWriter(f)
-	for _, item := range records {
+	for item := range items {
 		w.Write(item)
 	}
 	w.Flush()
-
-	return nil
+	close(errors)
 }

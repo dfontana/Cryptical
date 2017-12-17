@@ -47,6 +47,8 @@ func processFrame(currency string, sframe time.Time, eframe time.Time) []Record 
 		sframe.Unix(),
 		eframe.Unix())
 
+	log.Print(url)
+
 	if err := common.SimpleGet(url, &records); err != nil {
 		log.Print(err)
 		return records
@@ -56,21 +58,29 @@ func processFrame(currency string, sframe time.Time, eframe time.Time) []Record 
 }
 
 func (p *Poloniex) CSV(path string, records []Record) {
-	var items [][]string
+	items := make(chan []string)
+	errors := make(chan error)
+
+	go common.WriteToCSV(path, items, errors)
+
 	for _, obj := range records {
-		var item []string
-		item = append(item, strconv.FormatInt(int64(obj.GlobalTradeID), 10))
-		item = append(item, strconv.FormatInt(int64(obj.TradeID), 10))
-		item = append(item, obj.Date)
-		item = append(item, obj.Type)
-		item = append(item, strconv.FormatFloat(float64(obj.Rate), 'f', -1, 32))
-		item = append(item, strconv.FormatFloat(float64(obj.Amount), 'f', -1, 32))
-		item = append(item, strconv.FormatFloat(float64(obj.Total), 'f', -1, 32))
-
-		items = append(items, item)
+		select {
+			case err := <-errors:
+				log.Print(err)
+				break; // Out of loop
+			default:
+				//Send next item
+				var item []string
+				item = append(item, strconv.FormatInt(int64(obj.GlobalTradeID), 10))
+				item = append(item, strconv.FormatInt(int64(obj.TradeID), 10))
+				item = append(item, obj.Date)
+				item = append(item, obj.Type)
+				item = append(item, strconv.FormatFloat(float64(obj.Rate), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.Amount), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.Total), 'f', -1, 32))
+				items <- item
+		}		
 	}
-
-	if err := common.WriteToCSV(path, items); err != nil {
-		log.Print(err)
-	}
+	close(items)
+	<-errors
 }

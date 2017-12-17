@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"time"
-	
 	"strconv"
 )
 
@@ -55,19 +54,28 @@ func (g *GDAX) Historic(curr string, startTime time.Time, endTime time.Time, gra
 
 
 func (g *GDAX) CSV(path string, records []Record) {
-	var items [][]string
-	for _, n := range records {
-		var item []string
-		item = append(item, strconv.FormatInt(int64(n.Time), 10))
-		item = append(item, strconv.FormatFloat(float64(n.Low), 'f', -1, 32))
-		item = append(item, strconv.FormatFloat(float64(n.High), 'f', -1, 32))
-		item = append(item, strconv.FormatFloat(float64(n.Open), 'f', -1, 32))
-		item = append(item, strconv.FormatFloat(float64(n.Close), 'f', -1, 32))
-		item = append(item, strconv.FormatFloat(float64(n.Volume), 'f', -1, 32))
-		items = append(items, item)
-	}
+	items := make(chan []string)
+	errors := make(chan error)
 
-	if err := common.WriteToCSV(path, items); err != nil {
-		log.Print(err)
+	go common.WriteToCSV(path, items, errors)
+
+	for _, obj := range records {
+		select {
+			case err := <-errors:
+				log.Print(err)
+				break; // Out of loop
+			default:
+				//Send next item
+				var item []string
+				item = append(item, strconv.FormatInt(int64(obj.Time), 10))
+				item = append(item, strconv.FormatFloat(float64(obj.Low), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.High), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.Open), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.Close), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.Volume), 'f', -1, 32))
+				items <- item
+		}
 	}
+	close(items)
+	<-errors
 }
