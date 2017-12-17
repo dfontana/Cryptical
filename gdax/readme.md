@@ -9,7 +9,3 @@ Properties:
 Methods:
 - `g.Live()` starts the websocket feed in the current thread. You'll want to start this in a new thread to prevent blocking. Stop by setting the enabled property to false.
 - `g.Historic()` gets historic rates for a given time period and granularity with `g.Historic`
-
-## TODO:
-- Feed live data into a channel rather than print it
-- Create plot service utilizing said channel
