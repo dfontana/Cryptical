@@ -26,7 +26,7 @@ func (g *GDAX) WebsocketSubscribe(product string, conn *websocket.Conn) error {
 	return nil
 }
 
-func (g *GDAX) WebsocketClient() {
+func (g *GDAX) Live() {
 	for g.Enabled {
 		var Dialer websocket.Dialer
 		conn, _, err := Dialer.Dial(GDAX_WEBSOCKET_URL, http.Header{})
