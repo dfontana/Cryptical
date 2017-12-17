@@ -5,6 +5,15 @@ type Poloniex struct {
 	Currencies []string
 }
 
+type WebsocketMatch struct {
+	Type    string
+	TradeID int64
+	Rate    float64
+	Amount  float64
+	Date    string
+	Total   float64
+}
+
 type Record struct {
 	GlobalTradeID int64   `json:"globalTradeID"`
 	TradeID       int64   `json:"tradeID"`
