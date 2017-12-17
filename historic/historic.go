@@ -1,14 +1,13 @@
 package main
 
 import (
-	"encoding/csv"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math"
 	"net/http"
-	"net/url"
+	"encoding/csv"
 	"os"
 	"strconv"
 	"time"
@@ -49,19 +48,20 @@ func processFrame(sframe time.Time, eframe time.Time) []record {
 		baseURL,
 		historic,
 		granularity,
-		url.QueryEscape(sframe.String()),
-		url.QueryEscape(eframe.String()))
+		sframe.UTC().Format(time.RFC3339),
+		eframe.UTC().Format(time.RFC3339))
 
 	res, err := http.Get(url)
 	if err != nil {
 		log.Print("Failed Get: ", err)
 		return nil
 	}
+
 	defer res.Body.Close()
 
 	var records []record
 	if err := json.NewDecoder(res.Body).Decode(&records); err != nil {
-		log.Print(err)
+		log.Print(err, " Are you over the request limit?")
 	}
 
 	return records
@@ -80,6 +80,7 @@ func main() {
 			records = append(records, processFrame(sframe, eframe)...)
 			sframe = eframe.Add(shortDuration)
 			eframe = sframe.Add(longDuration)
+			time.Sleep(500 * time.Millisecond)
 		}
 		if eframe.After(endTime) {
 			records = append(records, processFrame(sframe, endTime)...)
