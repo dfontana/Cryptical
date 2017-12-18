@@ -16,12 +16,8 @@ func processFrame(currency string, sframe time.Time, eframe time.Time, gran int)
 
 	// Make request
 	values := url.Values{}
-	sUTC := sframe
-	eUTC := eframe
-	sstring := fmt.Sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ", sUTC.Year(), sUTC.Month(), sUTC.Day(), sUTC.Hour(), sUTC.Minute(), sUTC.Second())
-	estring := fmt.Sprintf("%04d-%02d-%02dT%02d:%02d:%02dZ", eUTC.Year(), eUTC.Month(), eUTC.Day(), eUTC.Hour(), eUTC.Minute(), eUTC.Second())
-	values.Set("start", sstring)
-	values.Set("end", estring)
+	values.Set("start", sframe.Format(time.RFC822Z))
+	values.Set("end", eframe.Format(time.RFC822Z))
 	values.Set("granularity", strconv.Itoa(gran))
 	fmtUrl := fmt.Sprintf("https://api.gdax.com/products/%s/candles?", currency) + values.Encode()
 
