@@ -39,7 +39,8 @@ func MACD(closingPrices []float64, fast, slow, signal int) ([]float64, []float64
 		return nil, nil, err
 	}
 
-	return macd, sign, nil
+	// Truncate MACD, so the returned values have same time period as sign
+	return macd[signal:], sign, nil
 }
 
 // EMA computes Exponential Moving Average for given period within the given

@@ -21,6 +21,11 @@ func gdaxMACD() {
 	// Past 150 days for ETH daily.
 	records := g.Historic(g.Currencies[0], time.Now().AddDate(0, 0, -daysBack), time.Now(), 24*60*60)
 
+	// Due to unreliability in gdax API, we have to check if more data was returned than requested.
+	if len(records) > daysBack+1 {
+		log.Fatal("GDAX API returned more records than asked for, invalidating MACD computation.")
+	}
+
 	// Reduce to array of close values
 	hist := make([]float64, len(records))
 	for i, val := range records {
@@ -31,11 +36,6 @@ func gdaxMACD() {
 	macd, signal, err := common.MACD(hist, 12, 26, 9)
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	// Due to unreliability in gdax API, we have to check if more data was returned than requested.
-	if len(records) > daysBack+1 {
-		log.Fatal("GDAX API returned more records than asked for, invalidating MACD computation.")
 	}
 
 	log.Println("MACD: ", len(macd), len(signal))
