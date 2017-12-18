@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -14,15 +15,15 @@ func processFrame(currency string, sframe time.Time, eframe time.Time, gran int)
 	var records []Record
 
 	// Make request
-	url := fmt.Sprintf("https://api.gdax.com/products/%s/candles?granularity=%d&start=%s&end=%s",
-		currency,
-		gran,
-		sframe.UTC().Format(time.RFC3339),
-		eframe.UTC().Format(time.RFC3339))
+	values := url.Values{}
+	values.Set("start", sframe.UTC().Format(time.RFC3339))
+	values.Set("end", eframe.UTC().Format(time.RFC3339))
+	values.Set("granularity", strconv.Itoa(gran))
+	fmtUrl := fmt.Sprintf("https://api.gdax.com/products/%s/candles?", currency) + values.Encode()
 
-	log.Println(url)
+	log.Println(fmtUrl)
 
-	if err := common.SimpleGet(url, &records); err != nil {
+	if err := common.SimpleGet(fmtUrl, &records); err != nil {
 		log.Println(err)
 	}
 	return records
