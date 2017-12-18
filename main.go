@@ -26,19 +26,22 @@ func gdaxMACD() {
 		log.Fatal("GDAX API returned more records than asked for, invalidating MACD computation.")
 	}
 
-	// Reduce to array of close values
-	hist := make([]float64, len(records))
+	// Reduce to array of close values & their times
+	hist := make([]common.TimeSeries, len(records))
 	for i, val := range records {
-		hist[i] = val.Close
+		hist[i] = common.TimeSeries{
+			val.Time,
+			val.Close,
+		}
 	}
 
 	// MACD: 12 fast, 26 slow, 9 signal
-	macd, signal, err := common.MACD(hist, 12, 26, 9)
-	if err != nil {
+	comp := common.MACD{}
+	if err := comp.Populate(hist, 12, 26, 9); err != nil {
 		log.Fatal(err)
 	}
 
-	log.Println("MACD: ", len(macd), len(signal))
+	log.Println("MACD: ", len(comp.Entries))
 }
 
 func polHist() {
