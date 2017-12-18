@@ -1,13 +1,13 @@
 package common
 
 import (
-	"encoding/json"
-	"net/http"
 	"fmt"
+	"net/http"
 
-		//CSV creation
-		"encoding/csv"
-		"os"
+	//CSV creation
+	"encoding/csv"
+	"encoding/json"
+	"os"
 )
 
 func SimpleGet(url string, into interface{}) error {
@@ -17,7 +17,7 @@ func SimpleGet(url string, into interface{}) error {
 	}
 
 	if res.StatusCode != 200 {
-		return fmt.Errorf("SimleGet returned status %d", res.StatusCode)
+		return fmt.Errorf("SimpleGet returned status %d", res.StatusCode)
 	}
 
 	defer res.Body.Close()
@@ -38,7 +38,7 @@ func WriteToCSV(path string, items chan []string, errors chan error) {
 
 	// Terminate early, sending our error to caller channel
 	if err != nil {
-		errors<-err
+		errors <- err
 		return
 	}
 

@@ -5,7 +5,6 @@ import (
 )
 
 type GDAX struct {
-	Enabled	bool
 	Currencies []string
 }
 
@@ -34,7 +33,7 @@ type WebsocketMatch struct {
 	MakerOrderID string  `json:"maker_order_id"`
 	TakerOrderID string  `json:"taker_order_id"`
 	Time         string  `json:"time"`
-	ProductID		 string	 `json:"product_id"`
+	ProductID    string  `json:"product_id"`
 	Size         float64 `json:"size,string"`
 	Price        float64 `json:"price,string"`
 	Side         string  `json:"side"`
@@ -54,12 +53,12 @@ type WebsocketDone struct {
 
 // History holds historic rate information
 type Record struct {
-	Time   int64 		`json:"time"`
-	Low    float64	`json:"low"`
-	High   float64	`json:"high"`
-	Open   float64	`json:"open"`
-	Close  float64	`json:"close"`
-	Volume float64	`json:"volume"`
+	Time   int64   `json:"time"`
+	Low    float64 `json:"low"`
+	High   float64 `json:"high"`
+	Open   float64 `json:"open"`
+	Close  float64 `json:"close"`
+	Volume float64 `json:"volume"`
 }
 
 // UnmarshalJSON handles decomposing the returned array from GDAX into a series of record structs.

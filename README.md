@@ -19,3 +19,11 @@
 
 ## Others: 
 Keep an eye on this topic for more inspiration: https://github.com/topics/trading-bot
+
+## Dependencies:
+Poloniex Websockets:
+- github.com/gammazero/nexus/client
+- github.com/gammazero/nexus/wamp
+
+GDax Websockets:
+- github.com/gorilla/websocket
