@@ -12,7 +12,7 @@ import (
 // The main function will always execute when called from "go run". So all we do
 // here is call the example we'd like to see
 func main() {
-	gdaxMACD()
+	gdaxBollinger()
 }
 
 
@@ -20,7 +20,34 @@ func main() {
  * Example where we build a Bollinger Band plot from historic data
  */
 func gdaxBollinger() {
+		g := gdax.GDAX{[]string{"ETH-USD"}}
+	
+		daysBack := 150
 
+		// Past 150 days for ETH daily.
+		records := g.Historic(g.Currencies[0], time.Now().AddDate(0, 0, -daysBack), time.Now(), 24*60*60)
+
+		// Due to unreliability in gdax API, we have to check if more data was returned than requested.
+		if len(records) > daysBack+1 {
+			log.Fatalf("GDAX API gave too many records: %d/%d", len(records), daysBack+1)
+		}
+
+		// Reduce to array of close values & their times
+		hist := make([]common.TimeSeries, len(records))
+		for i, val := range records {
+			hist[i] = common.TimeSeries{
+				time.Unix(val.Time, 0),
+				val.High,
+			}
+		}
+
+		// Make a Bollinger Plot
+		s := time.Now()
+		comp := common.Bollinger{hist}
+		comp.Plot("./testbb.png")
+		e3 := time.Since(s)
+
+		log.Printf("Bollinger Plot Took: %s", e3)
 }
 
 /**
@@ -59,7 +86,7 @@ func gdaxMACD() {
 	if err := comp.Populate(hist, 12, 26, 9); err != nil {
 		log.Fatal(err)
 	}
-	comp.Plot("./test.png")
+	comp.Plot("./testmacd.png")
 	e3 := time.Since(s)
 
 	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1,e2,e3)

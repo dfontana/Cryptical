@@ -196,6 +196,15 @@ func (m *MACD) Plot(path string) error{
 		},
 	}
 
+	if err := saveImage(graph, path); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Renders and saves graph.
+func saveImage(graph chart.Chart, path string) error {
 	// Write image to buffer
 	collector := &chart.ImageWriter{}
 	graph.Render(chart.PNG, collector)
@@ -211,7 +220,6 @@ func (m *MACD) Plot(path string) error{
 	}
 	png.Encode(outputFile, image)
 	outputFile.Close()
-
 	return nil
 }
 
