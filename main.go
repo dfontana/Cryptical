@@ -34,7 +34,7 @@ func gdaxMACD() {
 	for i, val := range records {
 		hist[i] = common.TimeSeries{
 			val.Time,
-			val.Close,
+			val.High,
 		}
 	}
 	e2 := time.Since(s)
