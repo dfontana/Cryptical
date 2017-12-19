@@ -2,6 +2,12 @@ package common
 
 import (
 	"errors"
+	"github.com/wcharczuk/go-chart"
+	"github.com/wcharczuk/go-chart/drawing"
+	"os"
+	"image/png"
+	"time"
+	"log"
 )
 
 // MACD Describes a single MACD computation. Should call Populate() to fill
@@ -119,6 +125,74 @@ func (m *MACD) Plot() error{
 	if m.Entries == nil {
 		return errors.New("Nothing to plot, did you Populate() your data?")
 	}
+	xv := make([]time.Time, len(m.Entries))
+	yMv := make([]float64, len(m.Entries))
+	ySv := make([]float64, len(m.Entries))
+
+	for i,entry := range m.Entries {
+		xv[i] = time.Unix(entry.Time, 0)
+		yMv[i] = entry.MACD
+		ySv[i] = entry.Signal
+	}
+
+
+	mSeries := chart.TimeSeries{
+		Name: "MACD",
+		Style: chart.Style{
+			Show:        true,
+			StrokeColor: drawing.ColorBlue,
+		},
+		XValues: xv,
+		YValues: yMv,
+	}
+
+	sSeries := chart.TimeSeries{
+		Name: "Signal",
+		Style: chart.Style{
+			Show:        true,
+			StrokeColor: drawing.ColorRed,
+		},
+		XValues: xv,
+		YValues: ySv,
+	}
+
+	graph := chart.Chart{
+		XAxis: chart.XAxis{
+			Style:        chart.Style{Show: true},
+			TickPosition: chart.TickPositionBetweenTicks,
+		},
+		YAxis: chart.YAxis{
+			Style: chart.Style{Show: true},
+			Range: &chart.ContinuousRange{
+				Max: 80.0,
+				Min: -30.0,
+			},
+		},
+		Series: []chart.Series{
+			mSeries,
+			sSeries,
+		},
+	}
+
+	collector := &chart.ImageWriter{}
+	graph.Render(chart.PNG, collector)
+	image, err := collector.Image()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// outputFile is a File type which satisfies Writer interface
+	outputFile, err := os.Create("test.png")
+	if err != nil {
+		// Handle error
+		log.Fatal(err)
+	}
+
+	// Encode takes a writer interface and an image interface
+	// We pass it the File and the RGBA
+	png.Encode(outputFile, image)
+
+	// Don't forget to close files
+	outputFile.Close()
 
 	return nil
 }

@@ -25,7 +25,7 @@ func gdaxMACD() {
 
 	// Due to unreliability in gdax API, we have to check if more data was returned than requested.
 	if len(records) > daysBack+1 {
-		log.Fatal("GDAX API returned more records than asked for, invalidating MACD computation.")
+		log.Fatalf("GDAX API gave too many records: %d/%d", len(records), daysBack+1)
 	}
 
 	s = time.Now()
@@ -45,6 +45,7 @@ func gdaxMACD() {
 	if err := comp.Populate(hist, 12, 26, 9); err != nil {
 		log.Fatal(err)
 	}
+	comp.Plot()
 	e3 := time.Since(s)
 
 	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1,e2,e3)
