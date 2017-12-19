@@ -13,15 +13,9 @@ import (
 // MACD Describes a single MACD computation. Should call Populate() to fill
 // this structs fields.
 type MACD struct {
-	Entries	[]MACDItem	// Time series data for MACD
-}
-
-// MACDIten describes a single entry of MACD; its values for a given
-// date.
-type MACDItem struct {
-	Time		int64		// Epoch Time
-	MACD		float64	// MACD value
-	Signal	float64	// Signal value
+	Time	 	[]time.Time // Array of times
+	MACD		[]float64		// Array of MACD values, corresponding to time.
+	Signal	[]float64 	// Array of Signal Values, corresponding to time.
 }
 
 type TimeSeries struct {
@@ -71,13 +65,13 @@ func (m *MACD) Populate(closingPrices []TimeSeries, fast, slow, signal int) (err
 	}
 
 	// Join our data into MACD items, then into an MACD struct
-	m.Entries = make([]MACDItem, len(sign))
+	m.Time = make([]time.Time, len(sign))
+	m.MACD = make([]float64, len(sign))
+	m.Signal = make([]float64, len(sign))
 	for i,_ := range sign {
-		m.Entries[i] = MACDItem {
-			sign[i].Time,
-			macd[i].Data,
-			sign[i].Data,
-		}
+		m.Time[i] = time.Unix(sign[i].Time, 0)
+		m.MACD[i] = macd[i].Data
+		m.Signal[i] = sign[i].Data
 	}
 	return nil
 }
@@ -122,19 +116,9 @@ func sma(closingPrices []TimeSeries) float64 {
 }
 
 func (m *MACD) Plot() error{
-	if m.Entries == nil {
+	if m.Time == nil || m.MACD == nil || m.Signal == nil {
 		return errors.New("Nothing to plot, did you Populate() your data?")
 	}
-	xv := make([]time.Time, len(m.Entries))
-	yMv := make([]float64, len(m.Entries))
-	ySv := make([]float64, len(m.Entries))
-
-	for i,entry := range m.Entries {
-		xv[i] = time.Unix(entry.Time, 0)
-		yMv[i] = entry.MACD
-		ySv[i] = entry.Signal
-	}
-
 
 	mSeries := chart.TimeSeries{
 		Name: "MACD",
@@ -142,8 +126,8 @@ func (m *MACD) Plot() error{
 			Show:        true,
 			StrokeColor: drawing.ColorBlue,
 		},
-		XValues: xv,
-		YValues: yMv,
+		XValues: m.Time,
+		YValues: m.MACD,
 	}
 
 	sSeries := chart.TimeSeries{
@@ -152,8 +136,8 @@ func (m *MACD) Plot() error{
 			Show:        true,
 			StrokeColor: drawing.ColorRed,
 		},
-		XValues: xv,
-		YValues: ySv,
+		XValues: m.Time,
+		YValues: m.Signal,
 	}
 
 	graph := chart.Chart{
@@ -164,8 +148,8 @@ func (m *MACD) Plot() error{
 		YAxis: chart.YAxis{
 			Style: chart.Style{Show: true},
 			Range: &chart.ContinuousRange{
-				Max: 80.0,
-				Min: -30.0,
+				Max: 80.0, 	// TODO should be max of MACD & signal array + 80
+				Min: -30.0, //TODO should be min of MACD & signal array - 30
 			},
 		},
 		Series: []chart.Series{
