@@ -190,8 +190,8 @@ func (m *MACD) Plot(path string) error{
 		YAxis: chart.YAxis{
 			Style: chart.Style{Show: true},
 			Range: &chart.ContinuousRange{
-				Max: upper, 		// TODO should be max of MACD & signal array + 80
-				Min: lower, 	//TODO should be min of MACD & signal array - 30
+				Max: upper,
+				Min: lower,
 			},
 		},
 		Series: []chart.Series{
