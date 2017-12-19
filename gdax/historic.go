@@ -12,23 +12,6 @@ import (
 	"../common"
 )
 
-func processFrame(currency string, sframe time.Time, eframe time.Time, gran int) []Record {
-	var records []Record
-
-	// Make request
-	values := url.Values{}
-	values.Set("start", sframe.Format(time.RFC822Z))
-	values.Set("end", eframe.Format(time.RFC822Z))
-	values.Set("granularity", strconv.Itoa(gran))
-	fmtUrl := fmt.Sprintf("https://api.gdax.com/products/%s/candles?", currency) + values.Encode()
-
-	if err := common.SimpleGet(fmtUrl, &records); err != nil {
-		log.Println(err)
-	}
-
-	return records
-}
-
 // Historic returns data in interval of gran (in seconds), for the specified currency pair, curr.
 // This history is bounded by the start and endtime stamps provided. The result is a slice, which
 // has been sorted in ascending (oldest first) order to guarentee order (since API does not)
@@ -51,7 +34,7 @@ func (g *GDAX) Historic(curr string, startTime time.Time, endTime time.Time, gra
 			records = append(records, processFrame(curr, sframe, endTime, gran)...)
 		}
 	} else {
-		records = append(records, processFrame(curr, startTime, endTime, gran)...)
+		records = processFrame(curr, startTime, endTime, gran)
 	}
 
 	sort.Slice(records, func(i, j int) bool {
@@ -60,6 +43,25 @@ func (g *GDAX) Historic(curr string, startTime time.Time, endTime time.Time, gra
 
 	return records
 }
+
+
+func processFrame(currency string, sframe time.Time, eframe time.Time, gran int) []Record {
+	var records []Record
+
+	// Make request
+	values := url.Values{}
+	values.Set("start", sframe.Format(time.RFC822Z))
+	values.Set("end", eframe.Format(time.RFC822Z))
+	values.Set("granularity", strconv.Itoa(gran))
+	fmtUrl := fmt.Sprintf("https://api.gdax.com/products/%s/candles?", currency) + values.Encode()
+
+	if err := common.SimpleGet(fmtUrl, &records); err != nil {
+		log.Println(err)
+	}
+
+	return records
+}
+
 
 func (g *GDAX) CSV(path string, records []Record) {
 	items := make(chan []string)
