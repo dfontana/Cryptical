@@ -9,10 +9,24 @@ import (
 	pol "./poloniex"
 )
 
+// The main function will always execute when called from "go run". So all we do
+// here is call the example we'd like to see
 func main() {
 	gdaxMACD()
 }
 
+
+/**
+ * Example where we build a Bollinger Band plot from historic data
+ */
+func gdaxBollinger() {
+
+}
+
+/**
+ * In this example, we grab historic data, transform it to be compatible with
+ * MACD, compute the MACD of this data and then plot it.
+ */
 func gdaxMACD() {
 	g := gdax.GDAX{[]string{"ETH-USD"}}
 
@@ -51,6 +65,11 @@ func gdaxMACD() {
 	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1,e2,e3)
 }
 
+/**
+ * In the following examples we fetch historical data between the desired time
+ * stamps in the desired currency. Note poloniex doesn't give a granularity -
+ * it just spews all the data it has.
+ */
 func polHist() {
 	p := pol.Poloniex{false, []string{"USDT_ETH"}}
 	recsP := p.Historic("USDT_ETH", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now())
@@ -63,6 +82,10 @@ func gdaxHist() {
 	g.CSV("./outG.csv", recs)
 }
 
+/**
+ * Examples of opening the websocket feeds to view realtime data from the exchanges.
+ * Poloniex may be down.
+ */
 func polLive() {
 	p := pol.Poloniex{true, []string{"USDT_ETH"}}
 	go p.Live()
