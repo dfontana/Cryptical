@@ -18,11 +18,6 @@ type MACD struct {
 	Hist		[]float64
 }
 
-type TimeSeries struct {
-	Time	int64		// Epoch time of datapoint
-	Data 	float64	// Data point 
-}
-
 // 	Populate will fill in  computes Moving Average Convergence Divergence.
 //	closingPrices:
 //		An array of closing prices associated with times. This doesn't have to
@@ -70,7 +65,7 @@ func (m *MACD) Populate(closingPrices []TimeSeries, fast, slow, signal int) (err
 	m.Signal = make([]float64, len(sign))
 	m.Hist = make([]float64, len(sign))
 	for i,_ := range sign {
-		m.Time[i] = time.Unix(sign[i].Time, 0)
+		m.Time[i] = sign[i].Time
 		m.MACD[i] = macd[i].Data
 		m.Signal[i] = sign[i].Data
 		m.Hist[i] = macd[i].Data - sign[i].Data
