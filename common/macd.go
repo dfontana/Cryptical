@@ -13,13 +13,13 @@ type MACD struct {
 // MACDIten describes a single entry of MACD; its values for a given
 // date.
 type MACDItem struct {
-	Time		float64	// Epoch Time
+	Time		int64		// Epoch Time
 	MACD		float64	// MACD value
 	Signal	float64	// Signal value
 }
 
 type TimeSeries struct {
-	Time	float64	// Epoch time of datapoint
+	Time	int64		// Epoch time of datapoint
 	Data 	float64	// Data point 
 }
 
@@ -50,7 +50,10 @@ func (m *MACD) Populate(closingPrices []TimeSeries, fast, slow, signal int) (err
 
 	// Calculate MACD(t)
 	for i, _ := range emaSlow {
-		emaSlow[i] = emaFast[i+(slow-fast)] - emaSlow[i]
+		emaSlow[i] = TimeSeries{
+			emaFast[i+(slow-fast)].Time,
+			emaFast[i+(slow-fast)].Data - emaSlow[i].Data,
+		}
 	}
 	macd := emaSlow
 	macd = macd[signal:] // Trim burned data from signal calc
@@ -62,8 +65,8 @@ func (m *MACD) Populate(closingPrices []TimeSeries, fast, slow, signal int) (err
 	}
 
 	// Join our data into MACD items, then into an MACD struct
-	m.Entries := make([]MACDItem, len(sign))
-	for i := range len(sign){
+	m.Entries = make([]MACDItem, len(sign))
+	for i,_ := range sign {
 		m.Entries[i] = MACDItem {
 			sign[i].Time,
 			macd[i].Data,
@@ -115,7 +118,7 @@ func sma(closingPrices []TimeSeries) float64 {
 
 func (m *MACD) Plot() error{
 	if m.Entries == nil {
-		return error.New("Nothing to plot, did you Populate() your data?")
+		return errors.New("Nothing to plot, did you Populate() your data?")
 	}
 
 	return nil
