@@ -20,17 +20,18 @@ func (g *GDAX) Historic(curr string, startTime time.Time, endTime time.Time, gra
 
 	requests := math.Ceil(endTime.Sub(startTime).Seconds() / float64(gran))
 	if requests > 200 {
-		shortDuration := time.Duration(gran) * time.Second
-		longDuration := time.Duration(200*gran) * time.Second
+		frameLen := time.Duration(200*gran) * time.Second
 		sframe := startTime
-		eframe := sframe.Add(longDuration)
+		eframe := startTime.Add(frameLen)
 		for eframe.Before(endTime) {
+			// Request the frame, move forward 1 frame (no overlap), wait 500ms to prevent lockout
 			records = append(records, processFrame(curr, sframe, eframe, gran)...)
-			sframe = eframe.Add(shortDuration)
-			eframe = sframe.Add(longDuration)
+			sframe = eframe.Add(time.Duration(gran) * time.Second)
+			eframe = sframe.Add(frameLen)
 			time.Sleep(500 * time.Millisecond)
 		}
 		if eframe.After(endTime) {
+			// The frame extends over the desired end boundary, so fill in
 			records = append(records, processFrame(curr, sframe, endTime, gran)...)
 		}
 	} else {
