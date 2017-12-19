@@ -73,7 +73,6 @@ func (m *MACD) Populate(closingPrices []TimeSeries, fast, slow, signal int) (err
 			sign[i].Data,
 		}
 	}
-
 	return nil
 }
 
