@@ -7,7 +7,6 @@ import (
 	"os"
 	"image/png"
 	"time"
-	"log"
 )
 
 // MACD Describes a single MACD computation. Should call Populate() to fill
@@ -16,6 +15,7 @@ type MACD struct {
 	Time	 	[]time.Time // Array of times
 	MACD		[]float64		// Array of MACD values, corresponding to time.
 	Signal	[]float64 	// Array of Signal Values, corresponding to time.
+	Hist		[]float64
 }
 
 type TimeSeries struct {
@@ -68,10 +68,12 @@ func (m *MACD) Populate(closingPrices []TimeSeries, fast, slow, signal int) (err
 	m.Time = make([]time.Time, len(sign))
 	m.MACD = make([]float64, len(sign))
 	m.Signal = make([]float64, len(sign))
+	m.Hist = make([]float64, len(sign))
 	for i,_ := range sign {
 		m.Time[i] = time.Unix(sign[i].Time, 0)
 		m.MACD[i] = macd[i].Data
 		m.Signal[i] = sign[i].Data
+		m.Hist[i] = macd[i].Data - sign[i].Data
 	}
 	return nil
 }
@@ -115,7 +117,9 @@ func sma(closingPrices []TimeSeries) float64 {
 	return sum / float64(len(closingPrices))
 }
 
-func (m *MACD) Plot() error{
+// Plot creates a plot from this computation instance, saved at the 
+// given path.
+func (m *MACD) Plot(path string) error{
 	if m.Time == nil || m.MACD == nil || m.Signal == nil {
 		return errors.New("Nothing to plot, did you Populate() your data?")
 	}
@@ -125,6 +129,8 @@ func (m *MACD) Plot() error{
 		Style: chart.Style{
 			Show:        true,
 			StrokeColor: drawing.ColorBlue,
+			DotColor: drawing.ColorBlue,
+			DotWidth:	2.0,
 		},
 		XValues: m.Time,
 		YValues: m.MACD,
@@ -135,48 +141,96 @@ func (m *MACD) Plot() error{
 		Style: chart.Style{
 			Show:        true,
 			StrokeColor: drawing.ColorRed,
+			DotColor: drawing.ColorRed,
+			DotWidth:	2.0,
 		},
 		XValues: m.Time,
 		YValues: m.Signal,
 	}
 
+	hSeries := chart.TimeSeries{
+		Name: "HistDiff",
+		XValues: m.Time,
+		YValues: m.Hist,
+	}
+
+	histSeries := chart.HistogramSeries{
+		Name: "Hist",
+		Style: chart.Style{
+			Show:        true,
+			StrokeColor: drawing.ColorFromHex("426993"),
+			FillColor: drawing.ColorFromHex("426993").WithAlpha(64),
+		},
+		YAxis: chart.YAxisPrimary,
+		InnerSeries: hSeries,
+	}
+
+	// Figure out our Y Bounds real quick:
+	mMin, mMax := minMax(m.MACD)
+	sMin, sMax := minMax(m.Signal)
+	lower := sMin - 50
+	if mMin < sMin {
+		lower = mMin - 50
+	}
+	upper := sMax + 50
+	if mMax > sMax {
+		upper = mMax + 50
+	}
+	
+	// Now create the chart
 	graph := chart.Chart{
+		Width: 1920,
+		Height: 1080,
+		DPI: 100,
 		XAxis: chart.XAxis{
 			Style:        chart.Style{Show: true},
 			TickPosition: chart.TickPositionBetweenTicks,
+			ValueFormatter: chart.TimeValueFormatter,
 		},
 		YAxis: chart.YAxis{
 			Style: chart.Style{Show: true},
 			Range: &chart.ContinuousRange{
-				Max: 80.0, 	// TODO should be max of MACD & signal array + 80
-				Min: -30.0, //TODO should be min of MACD & signal array - 30
+				Max: upper, 		// TODO should be max of MACD & signal array + 80
+				Min: lower, 	//TODO should be min of MACD & signal array - 30
 			},
 		},
 		Series: []chart.Series{
 			mSeries,
 			sSeries,
+			histSeries,
 		},
 	}
 
+	// Write image to buffer
 	collector := &chart.ImageWriter{}
 	graph.Render(chart.PNG, collector)
 	image, err := collector.Image()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	// outputFile is a File type which satisfies Writer interface
-	outputFile, err := os.Create("test.png")
+	
+	// Save buffer to file (after encoding)
+	outputFile, err := os.Create(path)
 	if err != nil {
-		// Handle error
-		log.Fatal(err)
+		return err
 	}
-
-	// Encode takes a writer interface and an image interface
-	// We pass it the File and the RGBA
 	png.Encode(outputFile, image)
-
-	// Don't forget to close files
 	outputFile.Close()
 
 	return nil
+}
+
+// Returns the min and max from a slice
+func minMax(vals []float64) (float64, float64) {
+	min := vals[0]
+	max := vals[0]
+	for _, val := range(vals){
+		if val < min {
+			min = val
+		}
+		if val > max {
+			max = val
+		}
+	}
+	return min, max
 }

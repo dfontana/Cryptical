@@ -45,7 +45,7 @@ func gdaxMACD() {
 	if err := comp.Populate(hist, 12, 26, 9); err != nil {
 		log.Fatal(err)
 	}
-	comp.Plot()
+	comp.Plot("./test.png")
 	e3 := time.Since(s)
 
 	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1,e2,e3)
