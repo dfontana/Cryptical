@@ -19,26 +19,36 @@ func gdaxMACD() {
 	daysBack := 150
 
 	// Past 150 days for ETH daily.
+	s := time.Now()
 	records := g.Historic(g.Currencies[0], time.Now().AddDate(0, 0, -daysBack), time.Now(), 24*60*60)
+	e1 := time.Since(s)
 
 	// Due to unreliability in gdax API, we have to check if more data was returned than requested.
 	if len(records) > daysBack+1 {
-		log.Fatal("GDAX API returned more records than asked for, invalidating MACD computation.")
+		log.Fatalf("GDAX API gave too many records: %d/%d", len(records), daysBack+1)
 	}
 
-	// Reduce to array of close values
-	hist := make([]float64, len(records))
+	s = time.Now()
+	// Reduce to array of close values & their times
+	hist := make([]common.TimeSeries, len(records))
 	for i, val := range records {
-		hist[i] = val.Close
+		hist[i] = common.TimeSeries{
+			val.Time,
+			val.Close,
+		}
 	}
+	e2 := time.Since(s)
 
 	// MACD: 12 fast, 26 slow, 9 signal
-	macd, signal, err := common.MACD(hist, 12, 26, 9)
-	if err != nil {
+	s = time.Now()
+	comp := common.MACD{}
+	if err := comp.Populate(hist, 12, 26, 9); err != nil {
 		log.Fatal(err)
 	}
+	comp.Plot("./test.png")
+	e3 := time.Since(s)
 
-	log.Println("MACD: ", len(macd), len(signal))
+	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1,e2,e3)
 }
 
 func polHist() {

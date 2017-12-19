@@ -27,3 +27,6 @@ Poloniex Websockets:
 
 GDax Websockets:
 - github.com/gorilla/websocket
+
+Plotting:
+- github.com/wcharczuk/go-chart
