@@ -11,7 +11,6 @@ import(
 	"net/http"
 	"encoding/json"
 	"time"
-	"errors"
 	"strconv"
 	"math"
 	"github.com/gorilla/websocket"
@@ -19,7 +18,6 @@ import(
 
 const (
 	POLONIEX_WEBSOCKET_URL = "wss://api2.poloniex.com"
-	POLONIEX_TICKER = "1002" //	Hard code :S
 	POLONIEX_BTC = "121" 		 //	Get from "returnTicker" endpoint
 )
 
@@ -33,8 +31,7 @@ func (p *Poloniex) Live() {
 		return
 	}
 
-	// Subscribe to ticker and BTC
-	subscribe(conn, POLONIEX_TICKER)
+	// Subscribe to BTC
 	subscribe(conn, POLONIEX_BTC)
 
 	//Listen
@@ -54,47 +51,15 @@ func handleEvent(resp []byte) {
 	if err := json.Unmarshal(resp, &message); err != nil {
 		log.Fatal(err)
 	}
-	channelID := toFloat(message[0])
-	ticker,_ := strconv.ParseFloat(POLONIEX_TICKER, 64)
-	if channelID < 1000 && channelID > 100 {
-		// it's an orderbook
+	chid := toFloat(message[0])
+	if chid > 100.0 && chid < 1000.0 {
 		orderbook, err := parseCurr(message)
 		if err != nil {
 			log.Println(err)
 			return
 		}
 		log.Printf("%+v\n",orderbook)
-	} else if channelID ==  ticker {
-		// it's a ticker
-		ticker, err := parseTicker(message)
-		if err != nil {
-			log.Printf("%s: (%s)\n", err, message)
-			return
-		}
-		log.Printf("%+v\n",ticker)
 	}
-}
-
-func parseTicker(raw []interface{}) (WSTicker, error) {
-	wt := WSTicker{}
-	var rawInner []interface{}
-	if len(raw) <= 2 {
-		return wt, errors.New("Not a ticker item.")
-	}
-	rawInner = raw[2].([]interface{}) 
-	marketID := int64(toFloat(rawInner[0]))
-	wt.Pair = "UNMAPPED"
-	wt.PairID = marketID
-	wt.Last = toFloat(rawInner[1])
-	wt.Ask = toFloat(rawInner[2])
-	wt.Bid = toFloat(rawInner[3])
-	wt.PercentChange = toFloat(rawInner[4])
-	wt.BaseVolume = toFloat(rawInner[5])
-	wt.QuoteVolume = toFloat(rawInner[6])
-	wt.IsFrozen = toFloat(rawInner[7]) != 0.0
-	wt.DailyHigh = toFloat(rawInner[8])
-	wt.DailyLow = toFloat(rawInner[9])
-	return wt, nil
 }
 
 func parseCurr(raw []interface{}) ([]WSOrderbook, error){
@@ -144,7 +109,7 @@ func subscribe(conn *websocket.Conn, channel string) error {
 		Channel string `json:"channel"`
 	}{
 		"subscribe",
-		POLONIEX_TICKER,
+		channel,
 	}
 
 	jsonMsg, err := json.Marshal(message)

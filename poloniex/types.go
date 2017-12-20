@@ -7,20 +7,6 @@ type Poloniex struct {
 	Currencies []string
 }
 
-type WSTicker struct {
-	Pair          string
-	Last          float64
-	Ask           float64
-	Bid           float64
-	PercentChange float64
-	BaseVolume    float64
-	QuoteVolume   float64
-	IsFrozen      bool
-	DailyHigh     float64
-	DailyLow      float64
-	PairID        int64
-}
-
 type WSOrderbook struct {
 	Pair    string
 	Event   string
