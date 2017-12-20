@@ -8,8 +8,6 @@ import(
 	"errors"
 	"strconv"
 	"math"
-	// "github.com/gammazero/nexus/client"
-	// "github.com/gammazero/nexus/wamp"
 	"github.com/gorilla/websocket"
 )
 
@@ -19,34 +17,25 @@ const (
 	POLONIEX_BTC = "121" 		 //	Get from "returnTicker" endpoint
 )
 
-type subscription struct {
-	Command string `json:"command"`
-	Channel string `json:"channel"`
-}
+// Subscribes to the given channel
+func subscribe(conn *websocket.Conn, channel string) error {
+	message := struct {
+		Command string `json:"command"`
+		Channel string `json:"channel"`
+	}{
+		"subscribe",
+		POLONIEX_TICKER,
+	}
 
-type WSTicker struct {
-	Pair          string
-	Last          float64
-	Ask           float64
-	Bid           float64
-	PercentChange float64
-	BaseVolume    float64
-	QuoteVolume   float64
-	IsFrozen      bool
-	DailyHigh     float64
-	DailyLow      float64
-	PairID        int64
-}
+	jsonMsg, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+	if err = conn.WriteMessage(websocket.TextMessage, jsonMsg); err != nil {
+		return err
+	}
 
-type WSOrderbook struct {
-	Pair    string
-	Event   string
-	TradeID int64
-	Type    string
-	Rate    float64
-	Amount  float64
-	Total   float64
-	TS      time.Time
+	return nil
 }
 
 func (p *Poloniex) Live() {
@@ -60,27 +49,8 @@ func (p *Poloniex) Live() {
 	}
 
 	// Subscribe to ticker and BTC
-	message := subscription{Command: "subscribe", Channel: POLONIEX_TICKER}
-	msgs, err := json.Marshal(message)
-	if err != nil {
-		log.Println(err, "marshalling WSmessage failed")
-		return
-	}
-	if err = conn.WriteMessage(websocket.TextMessage, msgs); err != nil {
-		log.Println(err, "sending WSmessage failed")
-		return
-	}
-
-	message = subscription{Command: "subscribe", Channel: POLONIEX_BTC}
-	msgs, err = json.Marshal(message)
-	if err != nil {
-		log.Println(err, "marshalling WSmessage failed")
-		return
-	}
-	if err = conn.WriteMessage(websocket.TextMessage, msgs); err != nil {
-		log.Println(err, "sending WSmessage failed")
-		return
-	}
+	subscribe(conn, POLONIEX_TICKER)
+	subscribe(conn, POLONIEX_BTC)
 
 	//Listen
 	for {
@@ -99,7 +69,7 @@ func handleEvent(resp []byte) {
 	if err := json.Unmarshal(resp, &message); err != nil {
 		log.Fatal(err)
 	}
-	channelID := message[0].(float64)
+	channelID := toFloat(message[0])
 	ticker,_ := strconv.ParseFloat(POLONIEX_TICKER, 64)
 	if channelID < 1000 && channelID > 100 {
 		// it's an orderbook
@@ -124,11 +94,10 @@ func parseTicker(raw []interface{}) (WSTicker, error) {
 	wt := WSTicker{}
 	var rawInner []interface{}
 	if len(raw) <= 2 {
-		return wt, errors.New("cannot parse to ticker")
+		return wt, errors.New("Not a ticker item.")
 	}
-	rawInner = raw[2].([]interface{})
+	rawInner = raw[2].([]interface{}) 
 	marketID := int64(toFloat(rawInner[0]))
-
 	wt.Pair = "UNMAPPED"
 	wt.PairID = marketID
 	wt.Last = toFloat(rawInner[1])
@@ -140,7 +109,6 @@ func parseTicker(raw []interface{}) (WSTicker, error) {
 	wt.IsFrozen = toFloat(rawInner[7]) != 0.0
 	wt.DailyHigh = toFloat(rawInner[8])
 	wt.DailyLow = toFloat(rawInner[9])
-
 	return wt, nil
 }
 
