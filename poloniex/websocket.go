@@ -1,5 +1,11 @@
 package poloniex
 
+/**
+ * Websocket functionality for Poloniex using the undocumented
+ * weboscket feed. This API has been modified from the original
+ * author's code found here https://github.com/pharrisee/poloniex-api/
+ */
+
 import(
 	"log"
 	"net/http"
@@ -16,27 +22,6 @@ const (
 	POLONIEX_TICKER = "1002" //	Hard code :S
 	POLONIEX_BTC = "121" 		 //	Get from "returnTicker" endpoint
 )
-
-// Subscribes to the given channel
-func subscribe(conn *websocket.Conn, channel string) error {
-	message := struct {
-		Command string `json:"command"`
-		Channel string `json:"channel"`
-	}{
-		"subscribe",
-		POLONIEX_TICKER,
-	}
-
-	jsonMsg, err := json.Marshal(message)
-	if err != nil {
-		return err
-	}
-	if err = conn.WriteMessage(websocket.TextMessage, jsonMsg); err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func (p *Poloniex) Live() {
 	// Connect
@@ -146,11 +131,31 @@ func parseCurr(raw []interface{}) ([]WSOrderbook, error){
 			trade.Total = trade.Rate * trade.Amount
 			t := time.Unix(int64(toFloat(v[5])), 0)
 			trade.TS = t
-		default:
 		}
 		trades = append(trades, trade)
 	}
 	return trades, nil
+}
+
+// Subscribes to the given channel
+func subscribe(conn *websocket.Conn, channel string) error {
+	message := struct {
+		Command string `json:"command"`
+		Channel string `json:"channel"`
+	}{
+		"subscribe",
+		POLONIEX_TICKER,
+	}
+
+	jsonMsg, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+	if err = conn.WriteMessage(websocket.TextMessage, jsonMsg); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func toFloat(i interface{}) float64 {
