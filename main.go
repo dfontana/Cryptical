@@ -20,7 +20,15 @@ func gdaxMACD() {
 
 	// Past 150 days for ETH daily.
 	s := time.Now()
-	records := g.Historic(g.Currencies[0], time.Now().AddDate(0, 0, -daysBack), time.Now(), 24*60*60)
+	var records []gdax.Record
+	for {
+		records = g.Historic(g.Currencies[0], time.Now().AddDate(0, 0, -daysBack), time.Now(), 24*60*60)
+		log.Printf("Data returned from API: %d/%d\n", len(records), daysBack+1)
+		if len(records) == daysBack+1 {
+			break // Correct amount of data found
+		}
+		time.Sleep(time.Duration(3) * time.Second)
+	}
 	e1 := time.Since(s)
 
 	// Due to unreliability in gdax API, we have to check if more data was returned than requested.
