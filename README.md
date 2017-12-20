@@ -7,6 +7,12 @@ Data
 - For now plots can be generated using go-charts, saved to a PNG and served to a frontend webpage. 
  - Later setup a websocket feed that can feed to a D3.JS frontend, allowing more interaction with the charts. You'll want to consider preprocessing as much data as you can rather than sending it in raw. 
 
+ Automation:
+ - Add inference for MACD (or monitoring, give some thought.)
+ - Manually compute Bollinger
+ - Add inference/monitoring for Bollinger
+ - Mix sources
+
  Plotting:
  - minMax can be shared
  - Saving images can be shared
