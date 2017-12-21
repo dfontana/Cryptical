@@ -3,38 +3,37 @@ package main
 import (
 	"log"
 	"time"
+	"math"
 
 	"./common"
-	gdax "./gdax"
+	gdax "github.com/preichenberger/go-gdax"
+	gdaxClient "./gdax"
 	pol "./poloniex"
 )
 
 func main() {
-	gdaxMACD()
+	gdaxLive()
 }
 
 func gdaxMACD() {
-	g := gdax.GDAX{[]string{"ETH-USD"}}
-
 	daysBack := 150
 
 	// Past 150 days for ETH daily.
 	s := time.Now()
-	var records []gdax.Record
+	var records []gdax.HistoricRate
+	start := time.Now().AddDate(0, 0, -daysBack)
+	end := time.Now()
+	gran := 24*60*60
+	expected := int(math.Ceil(end.Sub(start).Seconds() / float64(gran))) + 1
 	for {
-		records = g.Historic(g.Currencies[0], time.Now().AddDate(0, 0, -daysBack), time.Now(), 24*60*60)
-		log.Printf("Data returned from API: %d/%d\n", len(records), daysBack+1)
-		if len(records) == daysBack+1 {
+		records = gdaxClient.Historic("ETH-USD", start, end, gran)
+		log.Printf("Data returned from API: %d/%d\n", len(records), expected)
+		if len(records) == expected {
 			break // Correct amount of data found
 		}
 		time.Sleep(time.Duration(3) * time.Second)
 	}
 	e1 := time.Since(s)
-
-	// Due to unreliability in gdax API, we have to check if more data was returned than requested.
-	if len(records) > daysBack+1 {
-		log.Fatalf("GDAX API gave too many records: %d/%d", len(records), daysBack+1)
-	}
 
 	s = time.Now()
 	// Reduce to array of close values & their times
@@ -66,9 +65,8 @@ func polHist() {
 }
 
 func gdaxHist() {
-	g := gdax.GDAX{[]string{"ETH-USD"}}
-	recs := g.Historic("ETH-USD", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now(), 200)
-	g.CSV("./outG.csv", recs)
+	recs := gdaxClient.Historic("ETH-USD", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now(), 200)
+	gdaxClient.CSV("./outG.csv", recs)
 }
 
 func polLive() {
@@ -79,12 +77,10 @@ func polLive() {
 }
 
 func gdaxLive() {
-	g := gdax.GDAX{[]string{"ETH-USD"}}
-
 	// Asynchronously fetch data to messages channel.
-	messages := make(chan gdax.WebsocketMatch)
+	messages := make(chan gdaxClient.WsMatch)
 	quit := make(chan bool)
-	go g.Live(messages, quit)
+	go gdaxClient.Live([]string{"ETH-USD", "BTC-USD"}, messages, quit)
 
 	// Kill the livefeed after 10 seconds.
 	go func() {
@@ -94,6 +90,6 @@ func gdaxLive() {
 
 	// Loop until something stops the socket feed (error or disabled)
 	for msg := range messages {
-		log.Println(msg)
+		log.Printf("%+v\n", msg)
 	}
 }
