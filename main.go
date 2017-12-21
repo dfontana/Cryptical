@@ -5,10 +5,11 @@ import (
 	"time"
 	"math"
 
-	"./common"
 	gdax "github.com/preichenberger/go-gdax"
+	
+	"./common"
 	gdaxClient "./gdax"
-	pol "./poloniex"
+	poloClient "./poloniex"
 )
 
 func main() {
