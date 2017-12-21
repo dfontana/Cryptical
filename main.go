@@ -2,18 +2,18 @@ package main
 
 import (
 	"log"
-	"time"
 	"math"
+	"time"
 
 	gdax "github.com/preichenberger/go-gdax"
-	
+
 	"./common"
 	gdaxClient "./gdax"
 	poloClient "./poloniex"
 )
 
 func main() {
-	gdaxLive()
+	gdaxMACD()
 }
 
 func gdaxMACD() {
@@ -24,8 +24,8 @@ func gdaxMACD() {
 	var records []gdax.HistoricRate
 	start := time.Now().AddDate(0, 0, -daysBack)
 	end := time.Now()
-	gran := 24*60*60
-	expected := int(math.Ceil(end.Sub(start).Seconds() / float64(gran))) + 1
+	gran := 24 * 60 * 60
+	expected := int(math.Ceil(end.Sub(start).Seconds()/float64(gran))) + 1
 	for {
 		records = gdaxClient.Historic("ETH-USD", start, end, gran)
 		log.Printf("Data returned from API: %d/%d\n", len(records), expected)
@@ -56,11 +56,11 @@ func gdaxMACD() {
 	comp.Plot("./test.png")
 	e3 := time.Since(s)
 
-	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1,e2,e3)
+	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1, e2, e3)
 }
 
 func polHist() {
-	p := pol.Poloniex{false, []string{"USDT_ETH"}}
+	p := poloClient.Poloniex{false, []string{"USDT_ETH"}}
 	recsP := p.Historic("USDT_ETH", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now())
 	p.CSV("./outP.csv", recsP)
 }
@@ -71,7 +71,7 @@ func gdaxHist() {
 }
 
 func polLive() {
-	p := pol.Poloniex{true, []string{"USDT_ETH"}}
+	p := poloClient.Poloniex{true, []string{"USDT_ETH"}}
 	go p.Live()
 	time.Sleep(10 * time.Second)
 	p.Enabled = false
