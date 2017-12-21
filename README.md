@@ -15,8 +15,9 @@ Poloniex Websockets:
 - github.com/gammazero/nexus/client
 - github.com/gammazero/nexus/wamp
 
-GDax Websockets:
+Gdax:
 - github.com/gorilla/websocket
+- github.com/preichenberger/go-gdax
 
 Plotting:
 - github.com/wcharczuk/go-chart

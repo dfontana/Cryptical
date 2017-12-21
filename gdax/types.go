@@ -1,21 +1,7 @@
 package gdax
 
-import (
-	"encoding/json"
-)
-
-type GDAX struct {
-	Currencies []string
-}
-
-// WebsocketSubscribe takes in subscription information
-type WebsocketSubscribe struct {
-	Type      string `json:"type"`
-	ProductID string `json:"product_id"`
-}
-
 // WebsocketOpen collates open orders
-type WebsocketOpen struct {
+type WsOpen struct {
 	Type          string  `json:"type"`
 	Time          string  `json:"time"`
 	Sequence      int     `json:"sequence"`
@@ -26,7 +12,7 @@ type WebsocketOpen struct {
 }
 
 // WebsocketMatch holds match information
-type WebsocketMatch struct {
+type WsMatch struct {
 	Type         string  `json:"type"`
 	TradeID      int     `json:"trade_id"`
 	Sequence     int     `json:"sequence"`
@@ -40,7 +26,7 @@ type WebsocketMatch struct {
 }
 
 // WebsocketDone holds finished order information
-type WebsocketDone struct {
+type WsDone struct {
 	Type          string  `json:"type"`
 	Time          string  `json:"time"`
 	Sequence      int     `json:"sequence"`
@@ -49,23 +35,4 @@ type WebsocketDone struct {
 	Reason        string  `json:"reason"`
 	Side          string  `json:"side"`
 	RemainingSize float64 `json:"remaining_size,string"`
-}
-
-// History holds historic rate information
-type Record struct {
-	Time   int64   `json:"time"`
-	Low    float64 `json:"low"`
-	High   float64 `json:"high"`
-	Open   float64 `json:"open"`
-	Close  float64 `json:"close"`
-	Volume float64 `json:"volume"`
-}
-
-// UnmarshalJSON handles decomposing the returned array from GDAX into a series of record structs.
-func (n *Record) UnmarshalJSON(buf []byte) error {
-	tmp := []interface{}{&n.Time, &n.Low, &n.High, &n.Open, &n.Close, &n.Volume}
-	if err := json.Unmarshal(buf, &tmp); err != nil {
-		return err
-	}
-	return nil
 }

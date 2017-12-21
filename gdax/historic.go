@@ -1,70 +1,72 @@
 package gdax
 
 import (
-	"fmt"
+	gdax "github.com/preichenberger/go-gdax"
 	"log"
 	"math"
-	"net/url"
-	"strconv"
 	"time"
 	"sort"
+	"strconv"
 
 	"../common"
 )
 
-// Historic returns data in interval of gran (in seconds), for the specified currency pair, curr.
-// This history is bounded by the start and endtime stamps provided. The result is a slice, which
-// has been sorted in ascending (oldest first) order to guarentee order (since API does not)
-func (g *GDAX) Historic(curr string, startTime time.Time, endTime time.Time, gran int) []Record {
-	var records []Record
+// Historic returns data in interval of gran (in seconds), for the specified
+// currency pair, curr. This history is bounded by the start and endtime stamps
+// provided. The result is a slice, which has been sorted in ascending (oldest
+// first) order to guarentee order (since API does not)
+func Historic(curr string, startTime time.Time, endTime time.Time, gran int) []gdax.HistoricRate {
+	//Build client
+	client := gdax.NewClient("", "", "")
 
-	requests := math.Ceil(endTime.Sub(startTime).Seconds() / float64(gran))
-	if requests > 200 {
+	// Holds all our return data
+	var records []gdax.HistoricRate
+
+	// Since this API is limited to 200 returned results per request and 6 calls
+	// per second, break up the interval into smaller calls with a sleep
+	numExpected := math.Ceil(endTime.Sub(startTime).Seconds() / float64(gran)) + 1
+	if numExpected > 200 {
 		frameLen := time.Duration(200*gran) * time.Second
 		sframe := startTime
 		eframe := startTime.Add(frameLen)
 		for eframe.Before(endTime) {
-			// Request the frame, move forward 1 frame (no overlap), wait 500ms to prevent lockout
-			records = append(records, processFrame(curr, sframe, eframe, gran)...)
+			params := gdax.GetHistoricRatesParams { sframe, eframe, gran }
+			records = append(records, processFrame(client, curr, params)...)
 			sframe = eframe.Add(time.Duration(gran) * time.Second)
 			eframe = sframe.Add(frameLen)
 			time.Sleep(500 * time.Millisecond)
 		}
 		if eframe.After(endTime) {
 			// The frame extends over the desired end boundary, so fill in
-			records = append(records, processFrame(curr, sframe, endTime, gran)...)
+			params := gdax.GetHistoricRatesParams { sframe, endTime, gran }
+			records = append(records, processFrame(client, curr, params)...)
 		}
 	} else {
-		records = processFrame(curr, startTime, endTime, gran)
+		// Don't need to break up the call
+		params := gdax.GetHistoricRatesParams { startTime, endTime, gran }
+		records = processFrame(client, curr, params)
 	}
 
+	// Ensures data is returned in historical order (oldest first)
 	sort.Slice(records, func(i, j int) bool {
-		return records[i].Time < records[j].Time
+		return records[i].Time.Before(records[j].Time)
 	})
 
 	return records
 }
 
-
-func processFrame(currency string, sframe time.Time, eframe time.Time, gran int) []Record {
-	var records []Record
-
-	// Make request
-	values := url.Values{}
-	values.Set("start", sframe.Format(time.RFC822Z))
-	values.Set("end", eframe.Format(time.RFC822Z))
-	values.Set("granularity", strconv.Itoa(gran))
-	fmtUrl := fmt.Sprintf("https://api.gdax.com/products/%s/candles?", currency) + values.Encode()
-
-	if err := common.SimpleGet(fmtUrl, &records); err != nil {
+// Handles a slice in history. On error returns an empty slice, logging the error.
+func processFrame(client *gdax.Client, currency string, params gdax.GetHistoricRatesParams) []gdax.HistoricRate {
+	rates, err := client.GetHistoricRates(currency, params)
+	if err != nil {
 		log.Println(err)
 	}
-
-	return records
+	return rates
 }
 
-
-func (g *GDAX) CSV(path string, records []Record) {
+// CSV creates a CSV saved at the given path made from the given array of
+// historical rate structs.
+func CSV(path string, records []gdax.HistoricRate) {
 	items := make(chan []string)
 	errors := make(chan error)
 
@@ -78,7 +80,7 @@ func (g *GDAX) CSV(path string, records []Record) {
 		default:
 			//Send next item
 			var item []string
-			item = append(item, strconv.FormatInt(int64(obj.Time), 10))
+			item = append(item, strconv.FormatInt(obj.Time.Unix(), 10))
 			item = append(item, strconv.FormatFloat(float64(obj.Low), 'f', -1, 32))
 			item = append(item, strconv.FormatFloat(float64(obj.High), 'f', -1, 32))
 			item = append(item, strconv.FormatFloat(float64(obj.Open), 'f', -1, 32))
