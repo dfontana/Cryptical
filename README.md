@@ -8,18 +8,12 @@
 
 #### Poloniex
 - Work out an MACD example for Poloniex historical. Can you get hours / days?
-- Finish cleaning up the Websocket feed.
+- Add lookup logic for currency pairs to poloniex
 
 ## Dependencies:
-Poloniex Websockets:
-- github.com/gammazero/nexus/client
-- github.com/gammazero/nexus/wamp
-
-Gdax:
 - github.com/gorilla/websocket
 - github.com/preichenberger/go-gdax
-
-Plotting:
+- github.com/jyap808/go-poloniex
 - github.com/wcharczuk/go-chart
 
 ## Others: 
