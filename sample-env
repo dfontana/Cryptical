@@ -1,5 +1,8 @@
 # Sample environment file that would be filled in to run private endpoints
 
+# This is your GDAX API Key information. You must generate one from the GDAX website.
+# Be sure to give this API key as FEW permissions as possible - only what you need -
+# for your safety!
 GDAX_SECRET=hello
 GDAX_KEY=darkness
 GDAX_PASSPHRASE=myoldfriend
