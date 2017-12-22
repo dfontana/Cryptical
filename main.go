@@ -7,9 +7,9 @@ import (
 
   gdax "github.com/preichenberger/go-gdax"
   
-  "./plot"
-  gdaxClient "./gdax"
-  poloClient "./poloniex"
+  "github.com/dfontana/Cryptical/plot"
+  gdaxClient "github.com/dfontana/Cryptical/gdax"
+  poloClient "github.com/dfontana/Cryptical/poloniex"
 )
 
 // The main function will always execute when called from "go run". So all we do
