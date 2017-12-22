@@ -3,61 +3,46 @@ package poloniex
 import (
 	"../common"
 	"log"
-	"fmt"
 	"time"
 	"strconv"
+	"net/http"
+	"encoding/json"
+	"fmt"
 )
 
 const (
-	BASE 			= "https://poloniex.com/public?command="
-	HISTORY 	= "returnTradeHistory"
+	POLONIEX_API = "https://poloniex.com/public"
+	CHART_DATA = "returnChartData"
 )
 
-// Max of 50,000 records per request, so requests one day at a time to ensure most data points returned.
-func (p *Poloniex) Historic(curr string, startTime time.Time, endTime time.Time) []Record {
-	var records []Record
-	
-	sframe := startTime
-
-	for sframe.Before(endTime) {
-		nextRequest := time.Now().Add(167 * time.Millisecond)
-
-		eframe := sframe.Add(1 * time.Hour * 24)
-		records = append(records, processFrame(curr, sframe, eframe)...)
-		sframe = eframe
-
-		// Sleeps the remainder of the duration to meet rate limit
-		diff := nextRequest.Sub(time.Now())
-		if(diff > 0){
-			time.Sleep(diff)
-		}
+// Historic returns data for the hiven currency between the given times. The
+// data's interval is specified with the gran arugment - the number of seconds
+// between data points. Valid entries are 300, 900, 1800, 7200, 14400, or 86400.
+// Invalid entries will result in errors unmarshalling the response.
+func Historic(curr string, startTime time.Time, endTime time.Time, gran int) (retVal []CandleStick, err error) {
+	url := fmt.Sprintf(
+		"%s?command=%s&currencyPair=%s&period=%d&start=%d&end=%d",
+		POLONIEX_API,
+		CHART_DATA,
+		curr,
+		gran,
+		startTime.Unix(),
+		endTime.Unix(),
+	)
+	res, err := http.Get(url)
+	if err != nil {
+		return
 	}
-
-	return records
+	defer res.Body.Close()
+	err = json.NewDecoder(res.Body).Decode(&retVal)
+	if err != nil {
+		log.Println("FUDGE")
+	}
+	return
 }
 
-func processFrame(currency string, sframe time.Time, eframe time.Time) []Record {
-	records := []Record{}
-
-	// Make request
-	url := fmt.Sprintf("%s%s&currencyPair=%s&start=%d&end=%d",
-		BASE,
-		HISTORY,
-		currency,
-		sframe.Unix(),
-		eframe.Unix())
-
-	log.Print(url)
-
-	if err := common.SimpleGet(url, &records); err != nil {
-		log.Print(err)
-		return records
-	}
-
-	return records
-}
-
-func (p *Poloniex) CSV(path string, records []Record) {
+// CSV creates a csv at the given path consisting of the given candlestick data.
+func CSV(path string, records []CandleStick) {
 	items := make(chan []string)
 	errors := make(chan error)
 
@@ -71,13 +56,14 @@ func (p *Poloniex) CSV(path string, records []Record) {
 			default:
 				//Send next item
 				var item []string
-				item = append(item, strconv.FormatInt(int64(obj.GlobalTradeID), 10))
-				item = append(item, strconv.FormatInt(int64(obj.TradeID), 10))
-				item = append(item, obj.Date)
-				item = append(item, obj.Type)
-				item = append(item, strconv.FormatFloat(float64(obj.Rate), 'f', -1, 32))
-				item = append(item, strconv.FormatFloat(float64(obj.Amount), 'f', -1, 32))
-				item = append(item, strconv.FormatFloat(float64(obj.Total), 'f', -1, 32))
+				item = append(item, obj.Date.Time.Format(time.RFC822Z))
+				item = append(item, strconv.FormatFloat(float64(obj.High), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.Low), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.Open), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.Close), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.Volume), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.QuoteVolume), 'f', -1, 32))
+				item = append(item, strconv.FormatFloat(float64(obj.WeightedAverage), 'f', -1, 32))
 				items <- item
 		}		
 	}

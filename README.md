@@ -6,28 +6,14 @@
 - For now plots can be generated using go-charts, saved to a PNG and served to a frontend webpage. 
  - Later setup a websocket feed that can feed to a D3.JS frontend, allowing more interaction with the charts. You'll want to consider preprocessing as much data as you can rather than sending it in raw. 
 
-## Keep It Simple: Start with 1 Exchange MACD.
-### https://www.investopedia.com/terms/m/macd.asp
-### For example EMA: https://github.com/AbenezerMamo/crypto-signal
-### Sms alerts: https://www.twilio.com/sms
-### Plots: https://github.com/wcharczuk/go-chart
+#### Poloniex
+- Work out an MACD example for Poloniex historical. Can you get hours / days?
+- Add lookup logic for currency pairs to poloniex
 
-1. For each day from today - 30 days:
-2.  Day_MACD = 26_EMA - 12_EMA
-3.  Day_Signal = 9_EMA
-4.  Add to plot (Day = x, y1 & y2 = comps)
+## Dependencies:
+- github.com/gorilla/websocket
+- github.com/preichenberger/go-gdax
+- github.com/wcharczuk/go-chart
 
 ## Others: 
 Keep an eye on this topic for more inspiration: https://github.com/topics/trading-bot
-
-## Dependencies:
-Poloniex Websockets:
-- github.com/gammazero/nexus/client
-- github.com/gammazero/nexus/wamp
-
-Gdax:
-- github.com/gorilla/websocket
-- github.com/preichenberger/go-gdax
-
-Plotting:
-- github.com/wcharczuk/go-chart
