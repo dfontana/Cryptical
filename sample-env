@@ -1,0 +1,5 @@
+# Sample environment file that would be filled in to run private endpoints
+
+GDAX_SECRET=hello
+GDAX_KEY=darkness
+GDAX_PASSPHRASE=myoldfriend

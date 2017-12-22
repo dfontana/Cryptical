@@ -25,6 +25,7 @@ See `main.go` for some commentary and examples. To try them out, first you need 
 - github.com/gorilla/websocket
 - github.com/preichenberger/go-gdax
 - github.com/wcharczuk/go-chart
+- github.com/joho/godotenv
 
 ## Others: 
 Keep an eye on this topic for more inspiration: https://github.com/topics/trading-bot

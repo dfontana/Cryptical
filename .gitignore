@@ -8,3 +8,4 @@ lib
 *.json
 *.csv
 *.png
+*.env

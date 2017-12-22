@@ -15,7 +15,7 @@ import (
 // The main function will always execute when called from "go run". So all we do
 // here is call the example we'd like to see
 func main() {
-  polBollinger()
+  log.Println(BreakEven("ETH-USD", 25.0))
 }
 
 
