@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 	"strconv"
+	"fmt"
 
 	// Get requests
 	"net/http"
@@ -50,7 +51,7 @@ func CSV(path string, records []CandleStick) {
 	items := make(chan []string)
 	errors := make(chan error)
 
-	go common.writeToCSV(path, items, errors)
+	go writeToCSV(path, items, errors)
 
 	for _, obj := range records {
 		select {
