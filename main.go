@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	polHist()
+	polLive()
 }
 
 func gdaxMACD() {
@@ -73,7 +73,21 @@ func gdaxHist() {
 }
 
 func polLive() {
-	go poloClient.Live()
+		// Asynchronously fetch data to messages channel.
+		messages := make(chan poloClient.WSOrderbook)
+		quit := make(chan bool)
+		go poloClient.Live(messages, quit)
+	
+		// Kill the livefeed after 10 seconds.
+		go func() {
+			time.Sleep(10 * time.Second)
+			quit <- true
+		}()
+	
+		// Loop until something stops the socket feed (error or disabled)
+		for msg := range messages {
+			log.Printf("%+v\n", msg)
+		}
 }
 
 func gdaxLive() {

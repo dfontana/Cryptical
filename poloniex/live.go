@@ -20,7 +20,11 @@ const (
 	POLONIEX_BTC = "121" 		 //	Get from "returnTicker" endpoint
 )
 
-func Live() {
+// Live streams data for the given currencies into the matches channel.
+// The stream stops once a message is sent into the quit channel.
+// TODO currently subscribes to BTC USD only, needs ID lookup logic
+// implemented based on currency strings passed in.
+func Live(matches chan WSOrderbook, quit chan bool) {
 	// Connect
 	var Dialer websocket.Dialer
 	conn, resp, err := Dialer.Dial(POLONIEX_WEBSOCKET_URL, nil)
@@ -30,37 +34,57 @@ func Live() {
 		return
 	}
 
+	// Function for cleanup if something goes wrong
+	cleanup := func(){
+		conn.Close()
+		log.Println("Websocket client disconnected.")
+		close(matches)
+	}
+
 	// Subscribe to BTC
 	subscribe(conn, POLONIEX_BTC)
 
-	//Listen
+	//Listen, quitting when told.
 	for {
-		_, resp, err := conn.ReadMessage();
-		if err != nil {
-			log.Println(err)
+		select {
+		case <- quit:
+			cleanup()
 			return
-		}
+		default:
+			// Get a message
+			_, resp, err := conn.ReadMessage();
+			if err != nil {
+				log.Println(err)
+				cleanup()
+				return
+			}
 
-		handleEvent(resp); 
+			// Determine message type
+			message := []interface{}{}
+			if err := json.Unmarshal(resp, &message); err != nil {
+				log.Println(err)
+				continue
+			}
+			chid := toFloat(message[0])
+			if chid > 100.0 && chid < 1000.0 {
+				// It's an orderbook message, which we want
+				orderbook, err := parseCurr(message)
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
+				// Dump each item into the channel
+				for _,item := range orderbook {
+					matches <- item
+				}
+			}
+		}
 	}
 }
 
-func handleEvent(resp []byte) {
-	message := []interface{}{}
-	if err := json.Unmarshal(resp, &message); err != nil {
-		log.Fatal(err)
-	}
-	chid := toFloat(message[0])
-	if chid > 100.0 && chid < 1000.0 {
-		orderbook, err := parseCurr(message)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		log.Printf("%+v\n",orderbook)
-	}
-}
-
+// parseCurr decomposes the raw message into a currency's
+// orderbook structure.
 func parseCurr(raw []interface{}) ([]WSOrderbook, error){
 	trades := []WSOrderbook{}
 	//marketID := int64(toFloat(raw[0]))
