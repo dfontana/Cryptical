@@ -6,14 +6,14 @@ import (
 	"time"
 
 	gdax "github.com/preichenberger/go-gdax"
-
+	
 	"./common"
 	gdaxClient "./gdax"
 	poloClient "./poloniex"
 )
 
 func main() {
-	polLive()
+	polMACD()
 }
 
 func gdaxMACD() {
@@ -42,6 +42,43 @@ func gdaxMACD() {
 	for i, val := range records {
 		hist[i] = common.TimeSeries{
 			val.Time,
+			val.High,
+		}
+	}
+	e2 := time.Since(s)
+
+	// MACD: 12 fast, 26 slow, 9 signal
+	s = time.Now()
+	comp := common.MACD{}
+	if err := comp.Populate(hist, 12, 26, 9); err != nil {
+		log.Fatal(err)
+	}
+	comp.Plot("./test.png")
+	e3 := time.Since(s)
+
+	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1, e2, e3)
+}
+
+func polMACD() {
+	daysBack := 150
+
+	// Past 150 days for ETH daily.
+	s := time.Now()
+	start := time.Now().AddDate(0, 0, -daysBack)
+	end := time.Now()
+	gran := 24 * 60 * 60
+	records, err := poloClient.Historic("USDT_ETH", start, end, gran)
+	if err != nil {
+		log.Fatal(err)
+	}
+	e1 := time.Since(s)
+
+	s = time.Now()
+	// Reduce to array of close values & their times
+	hist := make([]common.TimeSeries, len(records))
+	for i, val := range records {
+		hist[i] = common.TimeSeries{
+			val.Date.Time,
 			val.High,
 		}
 	}
