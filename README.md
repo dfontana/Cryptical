@@ -19,10 +19,6 @@ Data
 ## How to run:
 See `main.go` for some commentary and examples. To try them out, first you need to `go get github.com/dfontana/Cryptical`, then swap in the function you want to run and call `go run main.go`. Easy peasy.
 
-#### Poloniex
-- Work out an MACD example for Poloniex historical. Can you get hours / days?
-- Add lookup logic for currency pairs to poloniex
-
 ## Dependencies:
 - github.com/gorilla/websocket
 - github.com/preichenberger/go-gdax
