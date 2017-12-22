@@ -2,11 +2,14 @@ package main
 
 import (
 	"log"
+	"math"
 	"time"
 
+	gdax "github.com/preichenberger/go-gdax"
+
 	"./common"
-	gdax "./gdax"
-	pol "./poloniex"
+	gdaxClient "./gdax"
+	poloClient "./poloniex"
 )
 
 // The main function will always execute when called from "go run". So all we do
@@ -55,19 +58,24 @@ func gdaxBollinger() {
  * MACD, compute the MACD of this data and then plot it.
  */
 func gdaxMACD() {
-	g := gdax.GDAX{[]string{"ETH-USD"}}
-
 	daysBack := 150
 
 	// Past 150 days for ETH daily.
 	s := time.Now()
-	records := g.Historic(g.Currencies[0], time.Now().AddDate(0, 0, -daysBack), time.Now(), 24*60*60)
-	e1 := time.Since(s)
-
-	// Due to unreliability in gdax API, we have to check if more data was returned than requested.
-	if len(records) > daysBack+1 {
-		log.Fatalf("GDAX API gave too many records: %d/%d", len(records), daysBack+1)
+	var records []gdax.HistoricRate
+	start := time.Now().AddDate(0, 0, -daysBack)
+	end := time.Now()
+	gran := 24 * 60 * 60
+	expected := int(math.Ceil(end.Sub(start).Seconds()/float64(gran))) + 1
+	for {
+		records = gdaxClient.Historic("ETH-USD", start, end, gran)
+		log.Printf("Data returned from API: %d/%d\n", len(records), expected)
+		if len(records) == expected {
+			break // Correct amount of data found
+		}
+		time.Sleep(time.Duration(3) * time.Second)
 	}
+	e1 := time.Since(s)
 
 	s = time.Now()
 	// Reduce to array of close values & their times
@@ -89,7 +97,7 @@ func gdaxMACD() {
 	comp.Plot("./testmacd.png")
 	e3 := time.Since(s)
 
-	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1,e2,e3)
+	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1, e2, e3)
 }
 
 /**
@@ -98,15 +106,14 @@ func gdaxMACD() {
  * it just spews all the data it has.
  */
 func polHist() {
-	p := pol.Poloniex{false, []string{"USDT_ETH"}}
+	p := poloClient.Poloniex{false, []string{"USDT_ETH"}}
 	recsP := p.Historic("USDT_ETH", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now())
 	p.CSV("./outP.csv", recsP)
 }
 
 func gdaxHist() {
-	g := gdax.GDAX{[]string{"ETH-USD"}}
-	recs := g.Historic("ETH-USD", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now(), 200)
-	g.CSV("./outG.csv", recs)
+	recs := gdaxClient.Historic("ETH-USD", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now(), 200)
+	gdaxClient.CSV("./outG.csv", recs)
 }
 
 /**
@@ -114,19 +121,17 @@ func gdaxHist() {
  * Poloniex may be down.
  */
 func polLive() {
-	p := pol.Poloniex{true, []string{"USDT_ETH"}}
+	p := poloClient.Poloniex{true, []string{"USDT_ETH"}}
 	go p.Live()
 	time.Sleep(10 * time.Second)
 	p.Enabled = false
 }
 
 func gdaxLive() {
-	g := gdax.GDAX{[]string{"ETH-USD"}}
-
 	// Asynchronously fetch data to messages channel.
-	messages := make(chan gdax.WebsocketMatch)
+	messages := make(chan gdaxClient.WsMatch)
 	quit := make(chan bool)
-	go g.Live(messages, quit)
+	go gdaxClient.Live([]string{"ETH-USD", "BTC-USD"}, messages, quit)
 
 	// Kill the livefeed after 10 seconds.
 	go func() {
@@ -136,6 +141,6 @@ func gdaxLive() {
 
 	// Loop until something stops the socket feed (error or disabled)
 	for msg := range messages {
-		log.Println(msg)
+		log.Printf("%+v\n", msg)
 	}
 }
