@@ -8,7 +8,6 @@ package poloniex
 
 import(
 	"log"
-	"net/http"
 	"encoding/json"
 	"time"
 	"strconv"
@@ -21,10 +20,10 @@ const (
 	POLONIEX_BTC = "121" 		 //	Get from "returnTicker" endpoint
 )
 
-func (p *Poloniex) Live() {
+func Live() {
 	// Connect
 	var Dialer websocket.Dialer
-	conn, resp, err := Dialer.Dial(POLONIEX_WEBSOCKET_URL, http.Header{})
+	conn, resp, err := Dialer.Dial(POLONIEX_WEBSOCKET_URL, nil)
 	if err != nil {
 		log.Printf("Unable to connect to Websocket. Error: %s\n", err)
 		log.Printf("%+v\n", resp)

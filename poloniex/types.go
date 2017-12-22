@@ -2,11 +2,6 @@ package poloniex
 
 import "time"
 
-type Poloniex struct {
-	Enabled	bool
-	Currencies []string
-}
-
 type WSOrderbook struct {
 	Pair    string
 	Event   string

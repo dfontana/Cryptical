@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	polLive()
+	polHist()
 }
 
 func gdaxMACD() {
@@ -60,9 +60,11 @@ func gdaxMACD() {
 }
 
 func polHist() {
-	p := poloClient.Poloniex{false, []string{"USDT_ETH"}}
-	recsP := p.Historic("USDT_ETH", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now())
-	p.CSV("./outP.csv", recsP)
+	recsP, err := poloClient.Historic("USDT_ETH", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now(), 300)
+	if err != nil {
+		log.Fatal(err)
+	}
+	poloClient.CSV("./outP.csv", recsP)
 }
 
 func gdaxHist() {
@@ -71,10 +73,7 @@ func gdaxHist() {
 }
 
 func polLive() {
-	p := poloClient.Poloniex{true, []string{"USDT_ETH"}}
-	go p.Live()
-	time.Sleep(10 * time.Second)
-	p.Enabled = false
+	go poloClient.Live()
 }
 
 func gdaxLive() {
