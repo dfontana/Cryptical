@@ -8,7 +8,9 @@ import (
 	"sort"
 	"strconv"
 
-	"../common"
+	//CSV creation
+	"encoding/csv"
+	"os"
 )
 
 // Historic returns data in interval of gran (in seconds), for the specified
@@ -70,7 +72,7 @@ func CSV(path string, records []gdax.HistoricRate) {
 	items := make(chan []string)
 	errors := make(chan error)
 
-	go common.WriteToCSV(path, items, errors)
+	go writeToCSV(path, items, errors)
 
 	for _, obj := range records {
 		select {
@@ -91,4 +93,26 @@ func CSV(path string, records []gdax.HistoricRate) {
 	}
 	close(items)
 	<-errors
+}
+
+// WriteToCSV is a routine that will write incoming items to a CSV
+// at the given path. Should an error occur, it is sent into the given
+// error channel and the routine terminates.
+func writeToCSV(path string, items chan []string, errors chan error) {
+	f, err := os.Create(path)
+
+	// Terminate early, sending our error to caller channel
+	if err != nil {
+		errors <- err
+		return
+	}
+
+	defer f.Close()
+
+	w := csv.NewWriter(f)
+	for item := range items {
+		w.Write(item)
+	}
+	w.Flush()
+	close(errors)
 }

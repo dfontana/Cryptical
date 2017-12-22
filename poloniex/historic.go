@@ -1,11 +1,19 @@
 package poloniex
 
 import (
-	"../common"
 	"log"
 	"fmt"
 	"time"
 	"strconv"
+
+	// Get requests
+	"net/http"
+	"encoding/json"
+	"io/ioutil"
+
+	//CSV creation
+	"encoding/csv"
+	"os"
 )
 
 const (
@@ -49,7 +57,7 @@ func processFrame(currency string, sframe time.Time, eframe time.Time) []Record 
 
 	log.Print(url)
 
-	if err := common.SimpleGet(url, &records); err != nil {
+	if err := simpleGet(url, &records); err != nil {
 		log.Print(err)
 		return records
 	}
@@ -61,7 +69,7 @@ func (p *Poloniex) CSV(path string, records []Record) {
 	items := make(chan []string)
 	errors := make(chan error)
 
-	go common.WriteToCSV(path, items, errors)
+	go common.writeToCSV(path, items, errors)
 
 	for _, obj := range records {
 		select {
@@ -83,4 +91,47 @@ func (p *Poloniex) CSV(path string, records []Record) {
 	}
 	close(items)
 	<-errors
+}
+
+func simpleGet(url string, into interface{}) error {
+	res, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != 200 {
+		err, _ := ioutil.ReadAll(res.Body)
+		return fmt.Errorf("SimpleGet returned status %d, %s", res.StatusCode, string(err))
+	}
+
+	defer res.Body.Close()
+
+	// Parse the response
+	if err := json.NewDecoder(res.Body).Decode(&into); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// writeToCSV is a routine that will write incoming items to a CSV
+// at the given path. Should an error occur, it is sent into the given
+// error channel and the routine terminates.
+func writeToCSV(path string, items chan []string, errors chan error) {
+	f, err := os.Create(path)
+
+	// Terminate early, sending our error to caller channel
+	if err != nil {
+		errors <- err
+		return
+	}
+
+	defer f.Close()
+
+	w := csv.NewWriter(f)
+	for item := range items {
+		w.Write(item)
+	}
+	w.Flush()
+	close(errors)
 }
