@@ -6,7 +6,7 @@ import (
 	"time"
 
 	gdax "github.com/preichenberger/go-gdax"
-
+	
 	"./common"
 	gdaxClient "./gdax"
 	poloClient "./poloniex"
@@ -100,15 +100,57 @@ func gdaxMACD() {
 	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1, e2, e3)
 }
 
+<<<<<<< HEAD
 /**
  * In the following examples we fetch historical data between the desired time
  * stamps in the desired currency. Note poloniex doesn't give a granularity -
  * it just spews all the data it has.
  */
+=======
+func polMACD() {
+	daysBack := 150
+
+	// Past 150 days for ETH daily.
+	s := time.Now()
+	start := time.Now().AddDate(0, 0, -daysBack)
+	end := time.Now()
+	gran := 24 * 60 * 60
+	records, err := poloClient.Historic("USDT_ETH", start, end, gran)
+	if err != nil {
+		log.Fatal(err)
+	}
+	e1 := time.Since(s)
+
+	s = time.Now()
+	// Reduce to array of close values & their times
+	hist := make([]common.TimeSeries, len(records))
+	for i, val := range records {
+		hist[i] = common.TimeSeries{
+			val.Date.Time,
+			val.High,
+		}
+	}
+	e2 := time.Since(s)
+
+	// MACD: 12 fast, 26 slow, 9 signal
+	s = time.Now()
+	comp := common.MACD{}
+	if err := comp.Populate(hist, 12, 26, 9); err != nil {
+		log.Fatal(err)
+	}
+	comp.Plot("./test.png")
+	e3 := time.Since(s)
+
+	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1, e2, e3)
+}
+
+>>>>>>> master
 func polHist() {
-	p := poloClient.Poloniex{false, []string{"USDT_ETH"}}
-	recsP := p.Historic("USDT_ETH", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now())
-	p.CSV("./outP.csv", recsP)
+	recsP, err := poloClient.Historic("USDT_ETH", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now(), 300)
+	if err != nil {
+		log.Fatal(err)
+	}
+	poloClient.CSV("./outP.csv", recsP)
 }
 
 func gdaxHist() {
@@ -121,10 +163,21 @@ func gdaxHist() {
  * Poloniex may be down.
  */
 func polLive() {
-	p := poloClient.Poloniex{true, []string{"USDT_ETH"}}
-	go p.Live()
-	time.Sleep(10 * time.Second)
-	p.Enabled = false
+		// Asynchronously fetch data to messages channel.
+		messages := make(chan poloClient.WSOrderbook)
+		quit := make(chan bool)
+		go poloClient.Live([]string{"USDT_BTC", "USDT_ETH"}, messages, quit)
+	
+		// Kill the livefeed after 10 seconds.
+		go func() {
+			time.Sleep(10 * time.Second)
+			quit <- true
+		}()
+	
+		// Loop until something stops the socket feed (error or disabled)
+		for msg := range messages {
+			log.Printf("%+v\n", msg)
+		}
 }
 
 func gdaxLive() {

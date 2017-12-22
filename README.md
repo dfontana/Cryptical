@@ -21,17 +21,13 @@ Data
 ## How to run:
 See `main.go` for some commentary and examples. To try them out, swap in the function you want to run and call `go run main.go`. Easy peasy. Later these can be built into binaries for executing, if desired.
 
-## Dependencies:
-Install these by running the `go get` command for each one independently (ie `go get github.com/gammazero/nexus/client`)
-Poloniex Websockets:
-- github.com/gammazero/nexus/client
-- github.com/gammazero/nexus/wamp
+#### Poloniex
+- Work out an MACD example for Poloniex historical. Can you get hours / days?
+- Add lookup logic for currency pairs to poloniex
 
-Gdax:
+## Dependencies:
 - github.com/gorilla/websocket
 - github.com/preichenberger/go-gdax
-
-Plotting:
 - github.com/wcharczuk/go-chart
 
 ## Others: 
