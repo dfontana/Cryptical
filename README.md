@@ -1,4 +1,4 @@
-# gdax_watcher
+# Cryptical
 
 ## TODO:
 Data
