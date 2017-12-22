@@ -16,16 +16,16 @@ type MACD struct {
 	Hist		[]float64
 }
 
-// 	Populate will fill in  computes Moving Average Convergence Divergence.
+// 	Compute determines the Moving Average Convergence Divergence.
 //	closingPrices:
 //		An array of closing prices associated with times. This doesn't have to
-//		be daily.
+//		be daily. Should be ordered oldest first.
 // 	fast, slow, signal: 
 //		Values to operate on closingPrices - assumed to be in the same time
 //		unit closingPrices was passed as. For days this is typically 12,26,9.
 // 	Returns: 
 //		Error is one occured, otherwise the Entries of this struct are now filled.
-func (m *MACD) Populate(closingPrices []TimeSeries, fast, slow, signal int) (error) {
+func (m *MACD) Compute(closingPrices []TimeSeries, fast, slow, signal int) error {
 	if fast >= slow {
 		return errors.New("Fast > slow. No.")
 	}

@@ -91,7 +91,7 @@ func gdaxMACD() {
 	// MACD: 12 fast, 26 slow, 9 signal
 	s = time.Now()
 	comp := plot.MACD{}
-	if err := comp.Populate(hist, 12, 26, 9); err != nil {
+	if err := comp.Compute(hist, 12, 26, 9); err != nil {
 		log.Fatal(err)
 	}
 	comp.Plot("./testmacd.png")
@@ -100,13 +100,6 @@ func gdaxMACD() {
 	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1, e2, e3)
 }
 
-<<<<<<< HEAD
-/**
- * In the following examples we fetch historical data between the desired time
- * stamps in the desired currency. Note poloniex doesn't give a granularity -
- * it just spews all the data it has.
- */
-=======
 func polMACD() {
 	daysBack := 150
 
@@ -135,7 +128,7 @@ func polMACD() {
 	// MACD: 12 fast, 26 slow, 9 signal
 	s = time.Now()
 	comp := plot.MACD{}
-	if err := comp.Populate(hist, 12, 26, 9); err != nil {
+	if err := comp.Compute(hist, 12, 26, 9); err != nil {
 		log.Fatal(err)
 	}
 	comp.Plot("./test.png")
@@ -144,7 +137,6 @@ func polMACD() {
 	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1, e2, e3)
 }
 
->>>>>>> master
 func polHist() {
 	recsP, err := poloClient.Historic("USDT_ETH", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now(), 300)
 	if err != nil {
