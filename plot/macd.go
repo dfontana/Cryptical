@@ -1,11 +1,9 @@
-package common
+package plot
 
 import (
 	"errors"
 	"github.com/wcharczuk/go-chart"
 	"github.com/wcharczuk/go-chart/drawing"
-	"os"
-	"image/png"
 	"time"
 )
 
@@ -80,7 +78,7 @@ func ema(closingPrices []TimeSeries, period int) ([]TimeSeries, error) {
 		return nil, errors.New("Need more history.")
 	}
 	// Starting point is a simple average
-	prevEMA := sma(closingPrices[0:period])
+	prevEMA := Sma(closingPrices[0:period])
 
 	// Truncate the first period of days off the history, since those are
 	// are used to initialize the prevEMA
@@ -96,20 +94,6 @@ func ema(closingPrices []TimeSeries, period int) ([]TimeSeries, error) {
 
 	// The expected result is of len closingPrices - period.
 	return result, nil
-}
-
-// sma is the Simple Moving Average for given slice
-func sma(closingPrices []TimeSeries) float64 {
-	if len(closingPrices) == 0 {
-		return 0
-	}
-
-	var sum float64
-	for _, v := range closingPrices {
-		sum += v.Data
-	}
-
-	return sum / float64(len(closingPrices))
 }
 
 // Plot creates a plot from this computation instance, saved at the 
@@ -161,8 +145,8 @@ func (m *MACD) Plot(path string) error{
 	}
 
 	// Figure out our Y Bounds real quick:
-	mMin, mMax := minMax(m.MACD)
-	sMin, sMax := minMax(m.Signal)
+	mMin, mMax := MinMax(m.MACD)
+	sMin, sMax := MinMax(m.Signal)
 	lower := sMin - 50
 	if mMin < sMin {
 		lower = mMin - 50
@@ -196,44 +180,9 @@ func (m *MACD) Plot(path string) error{
 		},
 	}
 
-	if err := saveImage(graph, path); err != nil {
+	if err := SaveImage(graph, path); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-// Renders and saves graph.
-func saveImage(graph chart.Chart, path string) error {
-	// Write image to buffer
-	collector := &chart.ImageWriter{}
-	graph.Render(chart.PNG, collector)
-	image, err := collector.Image()
-	if err != nil {
-		return err
-	}
-	
-	// Save buffer to file (after encoding)
-	outputFile, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	png.Encode(outputFile, image)
-	outputFile.Close()
-	return nil
-}
-
-// Returns the min and max from a slice
-func minMax(vals []float64) (float64, float64) {
-	min := vals[0]
-	max := vals[0]
-	for _, val := range(vals){
-		if val < min {
-			min = val
-		}
-		if val > max {
-			max = val
-		}
-	}
-	return min, max
 }

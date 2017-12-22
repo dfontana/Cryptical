@@ -1,11 +1,9 @@
-package common
+package plot
 
 import (
 	"errors"
 	"github.com/wcharczuk/go-chart"
 	"github.com/wcharczuk/go-chart/drawing"
-	"os"
-	"image/png"
 	"time"
 )
 
@@ -54,7 +52,7 @@ func (b *Bollinger) Plot(path string) error {
 	}
 
 	// Figure out our Y Bounds real quick:
-	hMin, hMax := minMaxbb(yv)
+	hMin, hMax := MinMax(yv)
 	lower := hMin - 50
 	upper := hMax + 50
 
@@ -81,44 +79,9 @@ func (b *Bollinger) Plot(path string) error {
 		},
 	}
 
-	if err := saveImagebb(graph, path); err != nil {
+	if err := SaveImage(graph, path); err != nil {
 		return err
 	}
 
 	return nil
-}
-
-// Renders and saves graph.
-func saveImagebb(graph chart.Chart, path string) error {
-	// Write image to buffer
-	collector := &chart.ImageWriter{}
-	graph.Render(chart.PNG, collector)
-	image, err := collector.Image()
-	if err != nil {
-		return err
-	}
-	
-	// Save buffer to file (after encoding)
-	outputFile, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	png.Encode(outputFile, image)
-	outputFile.Close()
-	return nil
-}
-
-// Returns the min and max from a slice
-func minMaxbb(vals []float64) (float64, float64) {
-	min := vals[0]
-	max := vals[0]
-	for _, val := range(vals){
-		if val < min {
-			min = val
-		}
-		if val > max {
-			max = val
-		}
-	}
-	return min, max
 }
