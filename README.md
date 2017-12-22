@@ -1,4 +1,5 @@
 # Cryptical
+[![GoDoc](https://godoc.org/github.com/dfontana/Cryptical?status.svg)](https://godoc.org/github.com/dfontana/Cryptical)
 
 ## TODO:
 - Put main.go into multiple test files inside an "_examples" folder (gdax.go, poloniex.go)
@@ -18,6 +19,7 @@ Data
 
 ## How to run:
 See `main.go` for some commentary and examples. To try them out, first you need to `go get github.com/dfontana/Cryptical`, then swap in the function you want to run and call `go run main.go`. Easy peasy.
+
 
 ## Dependencies:
 - github.com/gorilla/websocket
