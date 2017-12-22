@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	polMACD()
+	polLive()
 }
 
 func gdaxMACD() {
@@ -113,7 +113,7 @@ func polLive() {
 		// Asynchronously fetch data to messages channel.
 		messages := make(chan poloClient.WSOrderbook)
 		quit := make(chan bool)
-		go poloClient.Live(messages, quit)
+		go poloClient.Live([]string{"USDT_BTC", "USDT_ETH"}, messages, quit)
 	
 		// Kill the livefeed after 10 seconds.
 		go func() {

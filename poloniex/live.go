@@ -12,19 +12,20 @@ import(
 	"time"
 	"strconv"
 	"math"
+	"net/http"
 	"github.com/gorilla/websocket"
 )
 
 const (
 	POLONIEX_WEBSOCKET_URL = "wss://api2.poloniex.com"
-	POLONIEX_BTC = "121" 		 //	Get from "returnTicker" endpoint
+	POLONIEX_TICKER = "https://poloniex.com/public?command=returnTicker"
 )
 
 // Live streams data for the given currencies into the matches channel.
 // The stream stops once a message is sent into the quit channel.
 // TODO currently subscribes to BTC USD only, needs ID lookup logic
 // implemented based on currency strings passed in.
-func Live(matches chan WSOrderbook, quit chan bool) {
+func Live(currencies []string, matches chan WSOrderbook, quit chan bool) {
 	// Connect
 	var Dialer websocket.Dialer
 	conn, resp, err := Dialer.Dial(POLONIEX_WEBSOCKET_URL, nil)
@@ -41,8 +42,22 @@ func Live(matches chan WSOrderbook, quit chan bool) {
 		close(matches)
 	}
 
-	// Subscribe to BTC
-	subscribe(conn, POLONIEX_BTC)
+	// Lookup currency pair ids & subscribe
+	markets, err := getTickers()
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _,curr := range currencies {
+		if v, ok := markets[curr]; ok {
+			if err = subscribe(conn, v.ID); err != nil {
+				log.Println("Failed to subscribe to "+curr)
+			}else{
+				log.Println("Subscribed to: ", curr, v.ID)
+			}
+		}else{
+			log.Fatal("Invalid currency pair provided: " + curr)
+		}
+	}
 
 	//Listen, quitting when told.
 	for {
@@ -62,13 +77,13 @@ func Live(matches chan WSOrderbook, quit chan bool) {
 			// Determine message type
 			message := []interface{}{}
 			if err := json.Unmarshal(resp, &message); err != nil {
-				log.Println(err)
+				log.Printf("%s: (%s)\n", err, string(resp))
 				continue
 			}
 			chid := toFloat(message[0])
 			if chid > 100.0 && chid < 1000.0 {
 				// It's an orderbook message, which we want
-				orderbook, err := parseCurr(message)
+				orderbook, err := parseCurr(message, markets)
 				if err != nil {
 					log.Println(err)
 					continue
@@ -85,14 +100,20 @@ func Live(matches chan WSOrderbook, quit chan bool) {
 
 // parseCurr decomposes the raw message into a currency's
 // orderbook structure.
-func parseCurr(raw []interface{}) ([]WSOrderbook, error){
+func parseCurr(raw []interface{}, markets map[string]TickerEntry) ([]WSOrderbook, error){
 	trades := []WSOrderbook{}
-	//marketID := int64(toFloat(raw[0]))
+	marketID := int64(toFloat(raw[0]))
+	market := "UNMAPPED"
+	for k,v := range markets {
+		if v.ID == marketID {
+			market = k
+		}
+	}
 
 	for _, _v := range raw[2].([]interface{}) {
 		v := _v.([]interface{})
 		trade := WSOrderbook{}
-		trade.Pair = "UNMAPPED"
+		trade.Pair = market
 		switch v[0].(string) {
 		case "i":
 		case "o":
@@ -126,10 +147,10 @@ func parseCurr(raw []interface{}) ([]WSOrderbook, error){
 }
 
 // Subscribes to the given channel
-func subscribe(conn *websocket.Conn, channel string) error {
+func subscribe(conn *websocket.Conn, channel int64) error {
 	message := struct {
 		Command string `json:"command"`
-		Channel string `json:"channel"`
+		Channel int64 `json:"channel"`
 	}{
 		"subscribe",
 		channel,
@@ -142,8 +163,23 @@ func subscribe(conn *websocket.Conn, channel string) error {
 	if err = conn.WriteMessage(websocket.TextMessage, jsonMsg); err != nil {
 		return err
 	}
-
 	return nil
+}
+
+func getTickers() (retval map[string]TickerEntry, err error) {
+	res, err := http.Get(POLONIEX_TICKER)
+	if err != nil {
+		return
+	}
+	
+	defer res.Body.Close()
+	// s, err := res.Body.ToString()
+	// if err != nil {
+	// 	return
+	// }
+
+	err = json.NewDecoder(res.Body).Decode(&retval)
+	return
 }
 
 func toFloat(i interface{}) float64 {
