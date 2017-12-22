@@ -7,7 +7,7 @@ import (
 
 	gdax "github.com/preichenberger/go-gdax"
 	
-	"./common"
+	"./plot"
 	gdaxClient "./gdax"
 	poloClient "./poloniex"
 )
@@ -36,9 +36,9 @@ func gdaxBollinger() {
 		}
 
 		// Reduce to array of close values & their times
-		hist := make([]common.TimeSeries, len(records))
+		hist := make([]plot.TimeSeries, len(records))
 		for i, val := range records {
-			hist[i] = common.TimeSeries{
+			hist[i] = plot.TimeSeries{
 				time.Unix(val.Time, 0),
 				val.High,
 			}
@@ -46,7 +46,7 @@ func gdaxBollinger() {
 
 		// Make a Bollinger Plot
 		s := time.Now()
-		comp := common.Bollinger{hist}
+		comp := plot.Bollinger{hist}
 		comp.Plot("./testbb.png")
 		e3 := time.Since(s)
 
@@ -79,9 +79,9 @@ func gdaxMACD() {
 
 	s = time.Now()
 	// Reduce to array of close values & their times
-	hist := make([]common.TimeSeries, len(records))
+	hist := make([]plot.TimeSeries, len(records))
 	for i, val := range records {
-		hist[i] = common.TimeSeries{
+		hist[i] = plot.TimeSeries{
 			time.Unix(val.Time, 0),
 			val.High,
 		}
@@ -90,7 +90,7 @@ func gdaxMACD() {
 
 	// MACD: 12 fast, 26 slow, 9 signal
 	s = time.Now()
-	comp := common.MACD{}
+	comp := plot.MACD{}
 	if err := comp.Populate(hist, 12, 26, 9); err != nil {
 		log.Fatal(err)
 	}
@@ -123,9 +123,9 @@ func polMACD() {
 
 	s = time.Now()
 	// Reduce to array of close values & their times
-	hist := make([]common.TimeSeries, len(records))
+	hist := make([]plot.TimeSeries, len(records))
 	for i, val := range records {
-		hist[i] = common.TimeSeries{
+		hist[i] = plot.TimeSeries{
 			val.Date.Time,
 			val.High,
 		}
@@ -134,7 +134,7 @@ func polMACD() {
 
 	// MACD: 12 fast, 26 slow, 9 signal
 	s = time.Now()
-	comp := common.MACD{}
+	comp := plot.MACD{}
 	if err := comp.Populate(hist, 12, 26, 9); err != nil {
 		log.Fatal(err)
 	}
