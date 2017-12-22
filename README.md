@@ -13,7 +13,6 @@
 ## Dependencies:
 - github.com/gorilla/websocket
 - github.com/preichenberger/go-gdax
-- github.com/jyap808/go-poloniex
 - github.com/wcharczuk/go-chart
 
 ## Others: 

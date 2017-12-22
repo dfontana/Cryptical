@@ -171,13 +171,7 @@ func getTickers() (retval map[string]TickerEntry, err error) {
 	if err != nil {
 		return
 	}
-	
 	defer res.Body.Close()
-	// s, err := res.Body.ToString()
-	// if err != nil {
-	// 	return
-	// }
-
 	err = json.NewDecoder(res.Body).Decode(&retval)
 	return
 }

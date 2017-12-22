@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	polLive()
+	polMACD()
 }
 
 func gdaxMACD() {
