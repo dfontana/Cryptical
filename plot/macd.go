@@ -13,7 +13,8 @@ type MACD struct {
   Time	 	[]time.Time // Array of times
   MACD		[]float64		// Array of MACD values, corresponding to time.
   Signal	[]float64 	// Array of Signal Values, corresponding to time.
-  Hist		[]float64
+  Hist		[]float64   // Historgram values
+  Strategy func(in float64) Trade // Determines what trade to make based on in
 }
 
 // 	Compute determines the Moving Average Convergence Divergence.
@@ -94,6 +95,42 @@ func ema(closingPrices []TimeSeries, period int) ([]TimeSeries, error) {
 
   // The expected result is of len closingPrices - period.
   return result, nil
+}
+
+// Inference performs inference on a given feed of data using the existing model.
+// The model is unmodified, but rather a copy of it is expanded upon during inference
+// to which the model's strategy is applied. The output of this strategy is then
+// applied to the output channel.
+func (m *MACD) Inference(input chan float64, output chan Trade) {
+  if m.MACD == nil {
+    close(output)
+    log.Fatal("Model was not computed. Run compute first.")
+  }
+
+  if m.Strategy == nil {
+    close(output)
+    log.Fatal("You must define a strategy to trade on!")
+  }
+
+  // 1. Make a local copy of the m, as to not taint the original model (call it model)
+  //    Note this is just making a new MACD struct and assigning the fields. That is a deep copy
+  //    since the arrays are not of pointers.
+  // 2. For each data point taken in:
+  // 3.   Add onto the model's trained parameters
+  // 4.   model.Strategy()(data_point, model)
+  // 5.   If strategy == buy, send buy into output (Crypto amount, USD based on input & cryptoamt)
+  // 6.   If stratefy == sell, send sell into output (...)
+  // 7.   Else nothing.
+  // 8. close(output)
+
+  // Strategy should be an interface, which requires a method "Apply" that returns a Trade to make.
+  // It will apply the data point to the current macd model
+}
+
+// Strategy returns this model's strategy function. This function should use the existing model
+// in addition to some extra logic, to determine what Trade to make.
+func (m *MACD) Strategy() (func(in float64) Trade) {
+  return m.Strategy
 }
 
 // Plot creates a plot from this computation instance, saved at the 
