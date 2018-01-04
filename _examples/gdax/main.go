@@ -3,17 +3,18 @@ package main
 import (
 	"log"
 	"math"
-  "time"
+	"time"
+
+	"github.com/dfontana/Cryptical/computation"
 	gdaxClient "github.com/dfontana/Cryptical/gdax"
 	gdax "github.com/preichenberger/go-gdax"
-  "github.com/dfontana/Cryptical/plot"
 )
 
 func main() {
 	// Get historic data and save to CSV
 	recs := gdaxClient.Historic("ETH-USD", time.Date(2017, time.December, 14, 0, 0, 0, 0, time.Local), time.Now(), 200)
 	gdaxClient.CSV("./outG.csv", recs)
-	
+
 	// Create and save a bollinger plot
 	bollinger()
 
@@ -44,9 +45,9 @@ func bollinger() {
 	}
 
 	// Reduce to array of values & their times
-	hist := make([]plot.TimeSeries, len(records))
+	hist := make([]computation.TimeSeries, len(records))
 	for i, val := range records {
-		hist[i] = plot.TimeSeries{
+		hist[i] = computation.TimeSeries{
 			val.Time,
 			val.High,
 		}
@@ -54,7 +55,7 @@ func bollinger() {
 
 	// Make a Bollinger Plot
 	s := time.Now()
-	comp := plot.Bollinger{}
+	comp := computation.Bollinger{}
 	comp.Compute(hist, 20)
 	comp.Plot("./testbb.png")
 	e3 := time.Since(s)
@@ -63,46 +64,46 @@ func bollinger() {
 }
 
 func macd() {
-  daysBack := 150
+	daysBack := 150
 
-  // Past 150 days for ETH daily.
-  s := time.Now()
-  var records []gdax.HistoricRate
-  start := time.Now().AddDate(0, 0, -daysBack)
-  end := time.Now()
-  gran := 24 * 60 * 60
-  expected := int(math.Ceil(end.Sub(start).Seconds()/float64(gran)))
-  for {
-    records = gdaxClient.Historic("ETH-USD", start, end, gran)
-    log.Printf("Data returned from API: %d/%d\n", len(records), expected)
-    if len(records) == expected {
-      break // Correct amount of data found
-    }
-    time.Sleep(time.Duration(3) * time.Second)
-  }
-  e1 := time.Since(s)
+	// Past 150 days for ETH daily.
+	s := time.Now()
+	var records []gdax.HistoricRate
+	start := time.Now().AddDate(0, 0, -daysBack)
+	end := time.Now()
+	gran := 24 * 60 * 60
+	expected := int(math.Ceil(end.Sub(start).Seconds() / float64(gran)))
+	for {
+		records = gdaxClient.Historic("ETH-USD", start, end, gran)
+		log.Printf("Data returned from API: %d/%d\n", len(records), expected)
+		if len(records) == expected {
+			break // Correct amount of data found
+		}
+		time.Sleep(time.Duration(3) * time.Second)
+	}
+	e1 := time.Since(s)
 
-  s = time.Now()
-  // Reduce to array of close values & their times
-  hist := make([]plot.TimeSeries, len(records))
-  for i, val := range records {
-    hist[i] = plot.TimeSeries{
-      val.Time,
-      val.High,
-    }
-  }
-  e2 := time.Since(s)
+	s = time.Now()
+	// Reduce to array of close values & their times
+	hist := make([]computation.TimeSeries, len(records))
+	for i, val := range records {
+		hist[i] = computation.TimeSeries{
+			val.Time,
+			val.High,
+		}
+	}
+	e2 := time.Since(s)
 
-  // MACD: 12 fast, 26 slow, 9 signal
-  s = time.Now()
-  comp := plot.MACD{}
-  if err := comp.Compute(hist, 12, 26, 9); err != nil {
-    log.Fatal(err)
-  }
-  comp.Plot("./testmacd.png")
-  e3 := time.Since(s)
+	// MACD: 12 fast, 26 slow, 9 signal
+	s = time.Now()
+	comp := computation.MACD{}
+	if err := comp.Compute(hist, 12, 26, 9); err != nil {
+		log.Fatal(err)
+	}
+	comp.Plot("./testmacd.png")
+	e3 := time.Since(s)
 
-  log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1, e2, e3)
+	log.Printf("Timings:\n\tHistory: %s\n\tTimeSeries: %s\n\tMACD: %s", e1, e2, e3)
 }
 
 func stream() {

@@ -5,9 +5,6 @@
 - Test cases.
 
 Simulation:
-- Rename "plot" to "computation" -> makes more sense.
-- Finish filling in "Inference" for MACD.
-- Make bollinger conform to the "Computation" interface
 - Integrate fees into the simulation code (Meaning each exchange client will need to provide their fees, and trades should store the fee they incur)
 
 Automation:
@@ -15,7 +12,7 @@ Automation:
 - Add authenticated endpoints to GDax Client that will make trades from our trade data.
 
 Data:
-- Interface: Make a D3JS webpage for better interaction with Computation plots.
+- Interface: Make a D3JS webpage for better interaction with Computation plots. (Perhaps can use react to get some practice)
 - Make computation plots capable of updating with realtime data.
 - Experiment with combining multiple Computation inferences, for a higher order strategy.
 
