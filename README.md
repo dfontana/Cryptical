@@ -2,22 +2,36 @@
 [![GoDoc](https://godoc.org/github.com/dfontana/Cryptical?status.svg)](https://godoc.org/github.com/dfontana/Cryptical)
 
 ## TODO:
-- Test cases.
+- Test cases (for specific time periods from historic data, computation calculations, and simulation for historic period/model)
+- Add fee retrieval for each exchange's package
 
-Simulation:
-- Integrate fees into the simulation code (Meaning each exchange client will need to provide their fees, and trades should store the fee they incur)
+Enhance the Simulation:
+- Add starting balance parameter, tracking net crypto gain to end of simulation
+- Account for fees in each Trade (integrate into the Trade struct)
+- Remove USD from Trade struct (its not helpful)
+- Track number of trades made
+- Track average trade size
+- Track fees incurred
+ 
+Enhance and Expand Exchanges:
+- Binance
+- KuCoin?
+- Add authenticated endpoints for submitting trades
 
-Automation:
-- Convert the simulation code into an actual routine that plugs into live websocket feeds.
-- Add authenticated endpoints to GDax Client that will make trades from our trade data.
+Automate:
+- Adapt simulation code for realtime trading: you'll need to fetch historic data at startup, then work in realtime from there.
+- Integrate database for book-keeping (if/when needed?)
 
-Data:
-- Interface: Make a D3JS webpage for better interaction with Computation plots. (Perhaps can use react to get some practice)
-- Make computation plots capable of updating with realtime data.
-- Experiment with combining multiple Computation inferences, for a higher order strategy.
+Interface:
+- Work with ReactJS (for practice) and D3JS to create a web interface served by the bot.
+ - Start with running & displaying stats / logs for a simulation
+ - Then display an interactive chart for that simulation (trade data + indicators)
+ - Then add a livefeed page to display chart from WSS feed
+ - Then consider adding indicators to livefeed
+ - And finally, adding monitoring dashboard for bot activity (chart + indicators + bot's decisions)
 
 ## How to run:
-See `_examples/` for ways to work with the API. Also be sure to see the GoDoc, link provided in the badge at the top. To run these examples just `cd` into their folder and run `go run main.go`. Be sure you have already installed the dependencies with `go get`.
+See `_examples/` for ways to work with the API. Be sure to see the GoDoc, link provided in the badge at the top (and explore the subdirectories). To run these examples just `cd` into their folder and run `go run <file>.go`. Be sure you have already installed the dependencies with `go get`.
 
 ## Dependencies:
 - github.com/gorilla/websocket
