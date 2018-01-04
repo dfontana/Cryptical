@@ -2,24 +2,22 @@
 [![GoDoc](https://godoc.org/github.com/dfontana/Cryptical?status.svg)](https://godoc.org/github.com/dfontana/Cryptical)
 
 ## TODO:
-- Put main.go into multiple test files inside an "_examples" folder (gdax.go, poloniex.go)
 - Test cases.
 
- Automation:
- - Add inference for MACD (or monitoring, give some thought.)
- - Add inference/monitoring for Bollinger
- - Mix sources
+Simulation:
+- Integrate fees into the simulation code (Meaning each exchange client will need to provide their fees, and trades should store the fee they incur)
 
-Data
-- Feed live data from each exchange into shared channel. Can have multiple exchange routines running at once, feed to consumers.
-- Variety of consumers to make, start with MACD. Can generate plots per exchange, display the on top one another, or average them together by some means. Experiment.
-- For now plots can be generated using go-charts, saved to a PNG and served to a frontend webpage. 
- - Later setup a websocket feed that can feed to a D3.JS frontend, allowing more interaction with the charts. You'll want to consider preprocessing as much data as you can rather than sending it in raw. 
+Automation:
+- Convert the simulation code into an actual routine that plugs into live websocket feeds.
+- Add authenticated endpoints to GDax Client that will make trades from our trade data.
 
+Data:
+- Interface: Make a D3JS webpage for better interaction with Computation plots. (Perhaps can use react to get some practice)
+- Make computation plots capable of updating with realtime data.
+- Experiment with combining multiple Computation inferences, for a higher order strategy.
 
 ## How to run:
-See `main.go` for some commentary and examples. To try them out, first you need to `go get github.com/dfontana/Cryptical`, then swap in the function you want to run and call `go run main.go`. Easy peasy.
-
+See `_examples/` for ways to work with the API. Also be sure to see the GoDoc, link provided in the badge at the top. To run these examples just `cd` into their folder and run `go run main.go`. Be sure you have already installed the dependencies with `go get`.
 
 ## Dependencies:
 - github.com/gorilla/websocket

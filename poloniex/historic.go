@@ -20,7 +20,7 @@ const (
   CHART_DATA = "returnChartData"
 )
 
-// Historic returns data for the hiven currency between the given times. The
+// Historic returns data for the given currency between the given times. The
 // data's interval is specified with the gran arugment - the number of seconds
 // between data points. Valid entries are 300, 900, 1800, 7200, 14400, or 86400.
 // Invalid entries will result in errors unmarshalling the response.
