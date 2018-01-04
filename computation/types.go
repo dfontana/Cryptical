@@ -32,8 +32,8 @@ type Trade struct {
 
 // Computation defines a contract for types that is able to be used in inference.
 type Computation interface {
+	AddPoint(t TimeSeries) error
+	Analyze() (Trade, error)
 	Compute() error
-	Inference(input chan float64, output chan Trade)
 	Plot(path string) error
-	Strategy() func(in float64) Trade
 }

@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"time"
 
+	"github.com/dfontana/Cryptical"
 	"github.com/dfontana/Cryptical/computation"
-	poloClient "github.com/dfontana/Cryptical/poloniex"
+	"github.com/dfontana/Cryptical/poloniex"
 )
 
 // Just for the time being while testing
@@ -30,7 +30,7 @@ func main() {
 
 	// Will probably want ~3 * Slow data points to ensure we have enough.
 	startHist := endDate.Add(time.Duration(-3*slow*gran) * time.Second)
-	records, err := poloClient.Historic("USDT_ETH", startHist, endDate, gran)
+	records, err := poloniex.Historic("USDT_ETH", startHist, endDate, gran)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -45,17 +45,22 @@ func main() {
 	}
 
 	// Compute the inital model and plot it for visual inspection
-	comp := computation.MACD{}
-	if err := comp.Compute(hist, fast, slow, sign); err != nil {
+	comp := computation.MACD{
+		Data: hist,
+		Fast: fast,
+		Slow: slow,
+		Sign: sign,
+	}
+	if err := comp.Compute(); err != nil {
 		log.Fatal(err)
 	}
-	comp.Plot("./inf/inference0.png")
+	comp.Plot("./inference0.png")
 
 	/** ============================================
-		  =============== STRATEGY DEFINITION STEP =======
-	    ============================================ **/
+	=============== STRATEGY DEFINITION STEP =======
+	============================================ **/
 
-	strategy := func(m computation.MACD) computation.Trade {
+	strategy := func(m *computation.MACD) computation.Trade {
 		// This is just an example and will perform really poorly
 		// Look at last entry and take action
 		val := m.Hist[len(m.Hist)-1]
@@ -82,35 +87,10 @@ func main() {
 		}
 		return action
 	}
+	comp.Strategy = strategy
 
 	/** ============================================
-	  =============== SIMULATION STEP ================
-	  ============================================ **/
-	// 1. Fetch historic data from endDate onwards (this wil be 1 day's worth)
-	records, err = poloClient.Historic("USDT_ETH", endDate, endDate.Add(24*time.Hour), gran)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// 2. Loop over each entry in the new data:
-	sim := hist[:]
-	for i, val := range records {
-		// 3.   Append the entry to the old data
-		sim = append(sim, computation.TimeSeries{
-			val.Date.Time,
-			val.High,
-		})
-
-		// 4.   Recompute model & plot it
-		if err := comp.Compute(sim, fast, slow, sign); err != nil {
-			log.Fatal(err)
-		}
-		comp.Plot(fmt.Sprintf("./inf/inference%d.png", i))
-
-		// 5.   Apply strategy, log result
-		trade := strategy(comp)
-		log.Println(fmt.Sprintf("%d: %s %.5f for $%.2f", i, trade.Type, trade.Crypto, trade.USD))
-	}
-
-	log.Println("Done.")
+	=============== SIMULATION STEP ================
+	============================================ **/
+	bot.Simulate(&comp, endDate, gran, 24*time.Hour)
 }

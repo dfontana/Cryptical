@@ -12,32 +12,56 @@ import (
 // price data. This data should be in the form of time series structs, to
 // handle time senstive data. Populate the struct, then call its methods.
 type Bollinger struct {
-	History []TimeSeries // Array of historical data points used for computation
-	time    []time.Time  // times for each data point in upper,sma,lower
-	upper   []float64    // Simple Moving Average + 2*STDDev
-	sma     []float64    // Simple Moving Average
-	lower   []float64    // Simple Moving Average - 2*STDDev
+	// Model Paramters
+	AvgLen int
+	Data   []TimeSeries // Array of historical data points used for computation
+
+	// Computed Model
+	time  []time.Time // times for each data point in upper,sma,lower
+	upper []float64   // Simple Moving Average + 2*STDDev
+	sma   []float64   // Simple Moving Average
+	lower []float64   // Simple Moving Average - 2*STDDev
+
+	// Trading Strategy based on model
+	Strategy func(b *Bollinger) Trade
+}
+
+// AddPoint inserts a new data point to the already computed model. If the
+// model was not computed then an error is returned.
+func (b *Bollinger) AddPoint(t TimeSeries) error {
+	if len(b.sma) == 0 {
+		return errors.New("initial model must be made before adding new data points")
+	}
+	b.Data = append(b.Data, t)
+	return nil
+}
+
+// Analyze exectues this model's strategy. If the strategy is not defined, then
+// an error is thrown
+func (b *Bollinger) Analyze() (Trade, error) {
+	if b.Strategy == nil {
+		return Trade{}, errors.New("model does not have a strategy defined")
+	}
+	return b.Strategy(b), nil
 }
 
 // Compute determines the bollinger bands of this structs history
 // This function expects the history field to have been filled, and will error
 // if omitted.
 // avgLen: The number of data points to compute the Simple Moving Average over.
-func (b *Bollinger) Compute(hist []TimeSeries, avgLen int) error {
-	if len(hist) < avgLen-1 {
-		return errors.New("Not enough data to compute the requested SMA timeframe.")
+func (b *Bollinger) Compute() error {
+	if len(b.Data) == 0 || b.AvgLen == 0 || len(b.Data) < b.AvgLen-1 {
+		return errors.New("not enough data to compute the requested SMA timeframe, be sure all parameters are provided and compatible")
 	}
 
-	b.History = hist
-
 	// Compute average and stdDev, filling in the bands
-	b.time = make([]time.Time, len(b.History)-avgLen+1)
-	b.upper = make([]float64, len(b.History)-avgLen+1)
-	b.sma = make([]float64, len(b.History)-avgLen+1)
-	b.lower = make([]float64, len(b.History)-avgLen+1)
-	for i, _ := range b.sma {
-		sigma, mu := sigmaMu(b.History[i : i+avgLen])
-		b.time[i] = b.History[i+avgLen-1].Time
+	b.time = make([]time.Time, len(b.Data)-b.AvgLen+1)
+	b.upper = make([]float64, len(b.Data)-b.AvgLen+1)
+	b.sma = make([]float64, len(b.Data)-b.AvgLen+1)
+	b.lower = make([]float64, len(b.Data)-b.AvgLen+1)
+	for i := range b.sma {
+		sigma, mu := sigmaMu(b.Data[i : i+b.AvgLen])
+		b.time[i] = b.Data[i+b.AvgLen-1].Time
 		b.upper[i] = mu + 2*sigma
 		b.sma[i] = mu
 		b.lower[i] = mu - 2*sigma
@@ -49,15 +73,15 @@ func (b *Bollinger) Compute(hist []TimeSeries, avgLen int) error {
 // saved to the given path. Since Go-Chart provides a means to compute
 // this itself, you don't have to call populate on this.
 func (b *Bollinger) Plot(path string) error {
-	if b.time == nil || b.History == nil {
-		return errors.New("No data to plot, please compute first.")
+	if len(b.sma) == 0 || len(b.Data) == 0 {
+		return errors.New("no data to plot, please compute first")
 	}
 
 	// Reduce the time series into just x's and y's
 	drawable := len(b.time)
 	xv := make([]time.Time, drawable)
 	yv := make([]float64, drawable)
-	for i, item := range b.History[len(b.History)-drawable:] {
+	for i, item := range b.Data[len(b.Data)-drawable:] {
 		xv[i] = item.Time
 		yv[i] = item.Data
 	}

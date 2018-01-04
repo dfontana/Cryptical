@@ -11,33 +11,59 @@ import (
 // MACD Describes a single MACD computation. Should call Populate() to fill
 // this structs fields.
 type MACD struct {
+	// Model Paramters
+	Data []TimeSeries
+	Fast int
+	Slow int
+	Sign int
+
+	// Computed Model
 	Time   []time.Time // Array of times
 	MACD   []float64   // Array of MACD values, corresponding to time.
 	Signal []float64   // Array of Signal Values, corresponding to time.
 	Hist   []float64   // Historgram values
+
+	// Trading Strategy based on model
+	Strategy func(m *MACD) Trade
 }
 
-// 	Compute determines the Moving Average Convergence Divergence.
-//	closingPrices:
-//		An array of closing prices associated with times. This doesn't have to
-//		be daily. Should be ordered oldest first.
-// 	fast, slow, signal:
-//		Values to operate on closingPrices - assumed to be in the same time
-//		unit closingPrices was passed as. For days this is typically 12,26,9.
-// 	Returns:
-//		Error is one occured, otherwise the Entries of this struct are now filled.
-func (m *MACD) Compute(closingPrices []TimeSeries, fast, slow, signal int) error {
-	if fast >= slow {
-		return errors.New("fast > slow: No")
+// AddPoint inserts a new data point to the already computed model. If the
+// model was not computed then an error is returned.
+func (m *MACD) AddPoint(t TimeSeries) error {
+	if len(m.MACD) == 0 {
+		return errors.New("initial model must be made before adding new data points")
+	}
+	m.Data = append(m.Data, t)
+	return nil
+}
+
+// Analyze exectues this model's strategy. If the strategy is not defined, then
+// an error is thrown
+func (m *MACD) Analyze() (Trade, error) {
+	if m.Strategy == nil {
+		return Trade{}, errors.New("model does not have a strategy defined")
+	}
+	return m.Strategy(m), nil
+}
+
+// Compute populates the defined model based on the given parameters. If any
+// values are missing (or a problem occurs) then an error is returned.
+func (m *MACD) Compute() error {
+	if len(m.Data) == 0 || m.Fast == 0 || m.Slow == 0 || m.Sign == 0 {
+		return errors.New("missing parameters in model definition")
+	}
+
+	if m.Fast >= m.Slow {
+		return errors.New("fast > slow in model, I can't work like this")
 	}
 
 	// Calculate EMAs(t)
-	emaFast, err := ema(closingPrices, fast)
+	emaFast, err := ema(m.Data, m.Fast)
 	if err != nil {
 		return err
 	}
 
-	emaSlow, err := ema(closingPrices, slow)
+	emaSlow, err := ema(m.Data, m.Slow)
 	if err != nil {
 		return err
 	}
@@ -45,15 +71,15 @@ func (m *MACD) Compute(closingPrices []TimeSeries, fast, slow, signal int) error
 	// Calculate MACD(t)
 	for i := range emaSlow {
 		emaSlow[i] = TimeSeries{
-			emaFast[i+(slow-fast)].Time,
-			emaFast[i+(slow-fast)].Data - emaSlow[i].Data,
+			emaFast[i+(m.Slow-m.Fast)].Time,
+			emaFast[i+(m.Slow-m.Fast)].Data - emaSlow[i].Data,
 		}
 	}
 	macd := emaSlow
-	macd = macd[signal:] // Trim burned data from signal calc
+	macd = macd[m.Sign:] // Trim burned data from signal calc
 
 	// Calculate signal
-	sign, err := ema(macd, signal)
+	sign, err := ema(macd, m.Sign)
 	if err != nil {
 		return err
 	}
@@ -181,9 +207,6 @@ func (m *MACD) Plot(path string) error {
 		},
 	}
 
-	if err := SaveImage(graph, path); err != nil {
-		return err
-	}
-
-	return nil
+	err := SaveImage(graph, path)
+	return err
 }
