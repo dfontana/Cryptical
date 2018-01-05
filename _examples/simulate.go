@@ -60,29 +60,49 @@ func main() {
 	=============== STRATEGY DEFINITION STEP =======
 	============================================ **/
 
+	pf := bot.Portfolio{0.7, 0.0}
+	var lastAction computation.Trade
 	strategy := func(m *computation.MACD) computation.Trade {
 		// This is just an example and will perform really poorly
 		// Look at last entry and take action
 		val := m.Hist[len(m.Hist)-1]
-		var action computation.Trade
+		action := computation.Trade{
+			computation.Hodl,
+			0.0,
+			0.0,
+		}
 		switch {
-		case val > 2:
-			action = computation.Trade{
-				computation.Sell,
-				0.05,  // amount in crypto
-				200.0, // amount in USD
+		case val > 5:
+			// Dont repeat actions
+			if lastAction.Type != computation.Sell {
+				// Sell 75% of current portfolio
+				sellAmt := 0.75 * pf.Crypto
+				action = computation.Trade{
+					computation.Sell,
+					sellAmt,
+					m.Data[len(m.Data)-1].Data,
+				}
+				lastAction = action
 			}
 		case val < -2:
-			action = computation.Trade{
-				computation.Buy,
-				0.05,
-				200.0,
-			}
-		default:
-			action = computation.Trade{
-				computation.Hodl,
-				0.0,
-				0.0,
+			// Dont repeat actions
+			if lastAction.Type != computation.Buy {
+				usdVal := 0.75 * pf.USD // Buy with 75% your funds
+				if usdVal < 0.3 {
+					// Too small, bail.
+					action = computation.Trade{
+						computation.Hodl,
+						0.0,
+						0.0,
+					}
+				} else {
+					action = computation.Trade{
+						computation.Buy,
+						usdVal / m.Data[len(m.Data)-1].Data,
+						m.Data[len(m.Data)-1].Data,
+					}
+				}
+				lastAction = action
 			}
 		}
 		return action
@@ -92,5 +112,6 @@ func main() {
 	/** ============================================
 	=============== SIMULATION STEP ================
 	============================================ **/
-	bot.Simulate(&comp, endDate, gran, 24*time.Hour)
+	tf := bot.Timeframe{endDate, gran, 24 * time.Hour}
+	bot.Simulate(&comp, &pf, tf)
 }

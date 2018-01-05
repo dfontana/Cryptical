@@ -93,7 +93,7 @@ func (m *MACD) Compute() error {
 		m.Time[i] = sign[i].Time
 		m.MACD[i] = macd[i].Data
 		m.Signal[i] = sign[i].Data
-		m.Hist[i] = macd[i].Data - sign[i].Data
+		m.Hist[i] = sign[i].Data - macd[i].Data
 	}
 	return nil
 }
