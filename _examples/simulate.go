@@ -23,9 +23,9 @@ func main() {
 	endDate := time.Date(2017, time.December, 20, 23, 59, 59, 0, time.Local)
 
 	// These are in 5 min periods meaining we look back 12, 5, and 3.5 hours
-	slow := 24 * 6
-	fast := 10 * 6
-	sign := 7 * 6
+	slow := 26
+	fast := 12
+	sign := 9
 	gran := 300 // Seconds
 
 	// Will probably want ~3 * Slow data points to ensure we have enough.
@@ -61,13 +61,13 @@ func main() {
 	============================================ **/
 
 	pf := bot.Portfolio{CurrencyPair: "ETH-USD"}
-	pf.Initialize(0.7, 0.0, 800.0)
+	pf.Initialize(0.0, 500.0, 800.0)
 
 	var lastAction computation.Action
 	strategy := func(m *computation.MACD) computation.Action {
 		// This is just an example and will perform really poorly
 		// Look at last entry and take action
-		val := m.Hist[len(m.Hist)-1]
+
 		action := computation.Action{
 			computation.Hodl,
 			0.0,
@@ -76,20 +76,14 @@ func main() {
 
 		latest, _ := pf.Latest()
 
-		switch {
-		case val > 5:
-			// Dont repeat actions
-			if lastAction.Type != computation.Sell {
-				// Sell 75% of current portfolio
-				sellAmt := 0.75 * latest.Crypto
-				action = computation.Action{
-					computation.Sell,
-					sellAmt,
-					m.Data[len(m.Data)-1].Data,
-				}
-				lastAction = action
-			}
-		case val < -2:
+		prevValM := m.MACD[len(m.Hist)-2]
+		todaValM := m.MACD[len(m.Hist)-1]
+
+		prevValS := m.Signal[len(m.Hist)-2]
+		todaValS := m.Signal[len(m.Hist)-1]
+
+		// MACD goes above signal -> buy
+		if prevValS > prevValM && todaValM > todaValS {
 			// Dont repeat actions
 			if lastAction.Type != computation.Buy {
 				usdVal := 0.75 * latest.Pair // Buy with 75% your funds
@@ -109,7 +103,21 @@ func main() {
 				}
 				lastAction = action
 			}
+			// MACD goes below signal -> sell
+		} else if prevValS < prevValM && todaValM < todaValS {
+			// Dont repeat actions
+			if lastAction.Type != computation.Sell {
+				// Sell 75% of current portfolio
+				sellAmt := 0.75 * latest.Crypto
+				action = computation.Action{
+					computation.Sell,
+					sellAmt,
+					m.Data[len(m.Data)-1].Data,
+				}
+				lastAction = action
+			}
 		}
+		// otherwise we hodl
 		return action
 	}
 	comp.Strategy = strategy

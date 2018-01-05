@@ -14,8 +14,7 @@ Enhance the Simulation:
 - May need lightweight database backing for portfolio tracking (when history is large).
  
 Enhance and Expand Exchanges:
-- Binance
-- KuCoin?
+- Binance (github.com/adshao/go-binance)
 - Add authenticated endpoints for submitting trades
 
 Automate:
