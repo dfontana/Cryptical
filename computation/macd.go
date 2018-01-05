@@ -24,7 +24,7 @@ type MACD struct {
 	Hist   []float64   // Historgram values
 
 	// Trading Strategy based on model
-	Strategy func(m *MACD) Trade
+	Strategy func(m *MACD) Action
 }
 
 // AddPoint inserts a new data point to the already computed model. If the
@@ -39,9 +39,9 @@ func (m *MACD) AddPoint(t TimeSeries) error {
 
 // Analyze exectues this model's strategy. If the strategy is not defined, then
 // an error is thrown
-func (m *MACD) Analyze() (Trade, error) {
+func (m *MACD) Analyze() (Action, error) {
 	if m.Strategy == nil {
-		return Trade{}, errors.New("model does not have a strategy defined")
+		return Action{}, errors.New("model does not have a strategy defined")
 	}
 	return m.Strategy(m), nil
 }

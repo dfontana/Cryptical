@@ -23,7 +23,7 @@ type Bollinger struct {
 	lower []float64   // Simple Moving Average - 2*STDDev
 
 	// Trading Strategy based on model
-	Strategy func(b *Bollinger) Trade
+	Strategy func(b *Bollinger) Action
 }
 
 // AddPoint inserts a new data point to the already computed model. If the
@@ -38,9 +38,9 @@ func (b *Bollinger) AddPoint(t TimeSeries) error {
 
 // Analyze exectues this model's strategy. If the strategy is not defined, then
 // an error is thrown
-func (b *Bollinger) Analyze() (Trade, error) {
+func (b *Bollinger) Analyze() (Action, error) {
 	if b.Strategy == nil {
-		return Trade{}, errors.New("model does not have a strategy defined")
+		return Action{}, errors.New("model does not have a strategy defined")
 	}
 	return b.Strategy(b), nil
 }

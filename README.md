@@ -6,12 +6,12 @@
 - Add fee retrieval for each exchange's package
 
 Enhance the Simulation:
-- Add starting balance parameter, tracking net crypto gain to end of simulation
 - Account for fees in each Trade (integrate into the Trade struct)
-- Remove USD from Trade struct (its not helpful)
 - Track number of trades made
 - Track average trade size
 - Track fees incurred
+- Should portfolio be tracking sum, or should it really be tracking individual orders
+- May need lightweight database backing for portfolio tracking (when history is large).
  
 Enhance and Expand Exchanges:
 - Binance

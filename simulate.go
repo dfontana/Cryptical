@@ -18,12 +18,6 @@ type Timeframe struct {
 	Length time.Duration
 }
 
-// Portfolio describes the amount of currency and its USD value.
-type Portfolio struct {
-	Crypto float64
-	USD    float64
-}
-
 // Simulate will perform a historical simulation of the given model over the given timeframe.
 func Simulate(model computation.Computation, pf *Portfolio, tf Timeframe) {
 	// 1. Fetch data to simulate over.
@@ -34,7 +28,12 @@ func Simulate(model computation.Computation, pf *Portfolio, tf Timeframe) {
 
 	// (used for logging)
 	hodlCt := 0
-	log.Println(fmt.Sprintf("0: Starting PF %.10f, $%.2f", pf.Crypto, pf.USD))
+	entry, err := pf.Latest()
+	if err != nil {
+		log.Fatal("simulation requires a portfolio with at least one entry")
+		return
+	}
+	log.Println(fmt.Sprintf("0: Starting PF %.10f, $%.2f", entry.Crypto, entry.Pair))
 
 	// 2. Loop over each entry in the new data:
 	for i, val := range records {
@@ -51,38 +50,30 @@ func Simulate(model computation.Computation, pf *Portfolio, tf Timeframe) {
 		if err := model.Compute(); err != nil {
 			log.Fatal(err)
 		}
-		model.Plot(fmt.Sprintf("./inference%d.png", i+1))
 
 		// 5.   Apply strategy
-		trade, err := model.Analyze()
+		action, err := model.Analyze()
 		if err != nil {
 			log.Fatal(err)
 		}
-		switch trade.Type {
+		switch action.Type {
 		case computation.Buy:
-			pf.Crypto += trade.Crypto
-			pf.USD -= trade.Crypto * trade.USD
+			pf.Update(action.Crypto, action.Value)
+			model.Plot(fmt.Sprintf("./inference%d.png", i+1))
 		case computation.Sell:
-			pf.Crypto -= trade.Crypto
-			pf.USD += trade.Crypto * trade.USD
-			// Do nothing under Hodl
+			pf.Update(-action.Crypto, action.Value)
+			model.Plot(fmt.Sprintf("./inference%d.png", i+1))
 		}
 
 		// 6. Pretty Log
-		if trade.Type == computation.Hodl {
+		latest, _ := pf.Latest()
+		if action.Type == computation.Hodl {
 			if hodlCt != 1 {
-				log.Println(fmt.Sprintf("%d: %s. PF: %.10f, $%.2f", i+1, trade.Type, pf.Crypto, pf.USD))
+				log.Println(fmt.Sprintf("%d: %s (@$%.2f) PF: %.10f, $%.2f", i+1, action.Type, latest.CurrentValue, latest.Crypto, latest.Pair))
 				hodlCt = 1
 			}
 		} else {
-			var fmtStr string
-			// if trade.Type == computation.Buy {
-			// 	fmtStr = "%d: %s %.10f (-$%.2f) PF: %.10f, $%.2f"
-			// } else {
-			// 	fmtStr = "%d: %s %.10f (+$%.2f) PF: %.10f, $%.2f"
-			// }
-			fmtStr = "%d: %s %.10f (@$%.2f) PF: %.10f, $%.2f"
-			log.Println(fmt.Sprintf(fmtStr, i+1, trade.Type, trade.Crypto, trade.USD, pf.Crypto, pf.USD))
+			log.Println(fmt.Sprintf("%d: %s %.10f (@$%.2f) PF: %.10f, $%.2f", i+1, action.Type, action.Crypto, action.Value, latest.Crypto, latest.Pair))
 			hodlCt = 0
 		}
 	}

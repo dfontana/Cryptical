@@ -60,24 +60,29 @@ func main() {
 	=============== STRATEGY DEFINITION STEP =======
 	============================================ **/
 
-	pf := bot.Portfolio{0.7, 0.0}
-	var lastAction computation.Trade
-	strategy := func(m *computation.MACD) computation.Trade {
+	pf := bot.Portfolio{CurrencyPair: "ETH-USD"}
+	pf.Initialize(0.7, 0.0, 800.0)
+
+	var lastAction computation.Action
+	strategy := func(m *computation.MACD) computation.Action {
 		// This is just an example and will perform really poorly
 		// Look at last entry and take action
 		val := m.Hist[len(m.Hist)-1]
-		action := computation.Trade{
+		action := computation.Action{
 			computation.Hodl,
 			0.0,
 			0.0,
 		}
+
+		latest, _ := pf.Latest()
+
 		switch {
 		case val > 5:
 			// Dont repeat actions
 			if lastAction.Type != computation.Sell {
 				// Sell 75% of current portfolio
-				sellAmt := 0.75 * pf.Crypto
-				action = computation.Trade{
+				sellAmt := 0.75 * latest.Crypto
+				action = computation.Action{
 					computation.Sell,
 					sellAmt,
 					m.Data[len(m.Data)-1].Data,
@@ -87,16 +92,16 @@ func main() {
 		case val < -2:
 			// Dont repeat actions
 			if lastAction.Type != computation.Buy {
-				usdVal := 0.75 * pf.USD // Buy with 75% your funds
+				usdVal := 0.75 * latest.Pair // Buy with 75% your funds
 				if usdVal < 0.3 {
 					// Too small, bail.
-					action = computation.Trade{
+					action = computation.Action{
 						computation.Hodl,
 						0.0,
 						0.0,
 					}
 				} else {
-					action = computation.Trade{
+					action = computation.Action{
 						computation.Buy,
 						usdVal / m.Data[len(m.Data)-1].Data,
 						m.Data[len(m.Data)-1].Data,
