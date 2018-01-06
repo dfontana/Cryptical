@@ -22,12 +22,11 @@ Automate:
 - Integrate database for book-keeping (if/when needed?)
 
 Interface:
-- Work with ReactJS (for practice) and D3JS to create a web interface served by the bot.
- - Start with running & displaying stats / logs for a simulation
- - Then display an interactive chart for that simulation (trade data + indicators)
- - Then add a livefeed page to display chart from WSS feed
- - Then consider adding indicators to livefeed
- - And finally, adding monitoring dashboard for bot activity (chart + indicators + bot's decisions)
+Work with ReactJS (for practice) to create a web interface served by the bot.
+1. Routing should be such that: `/` leads to home page and interface, while `/api/` leads to data sources.
+2. Design the layout & use cases of the simulation page
+3. Implement the simulation page in chunks. 
+4. Move onto livefeed data, chartings, and bot monitoring
 
 ## How to run:
 See `_examples/` for ways to work with the API. Be sure to see the GoDoc, link provided in the badge at the top (and explore the subdirectories). To run these examples just `cd` into their folder and run `go run <file>.go`. Be sure you have already installed the dependencies with `go get`.
