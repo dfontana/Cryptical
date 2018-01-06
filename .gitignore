@@ -9,3 +9,5 @@ lib
 *.csv
 *.png
 *.env
+node_modules/
+
