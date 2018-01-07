@@ -11,25 +11,18 @@
 
 /** Plotting region */
 #component-app-middle {
-  margin: 10px;
   display: flex;
   flex-direction: row;
   flex: 2;
 }
 
-#component-app-middle > * {
+#component-app-middle > *, #component-app-bottom {
   flex: 1;
 }
 
 #chart {
   flex: 2;
 }
-
-/** Additional stats and info */
-#component-app-bottom {
-  flex: 1;
-}
-
 
 /* Small screens turn the sidebar into a Header */
 @media all and (max-width: 800px) {
@@ -39,15 +32,10 @@
     flex-flow: row;
     align-items: center;
     justify-content: space-between;
-    border-radius: 6px 6px 0 0;
   }
 
   #component-sidebar > *  {
     margin: 0 15px 0 15px;
-  }
-
-  #component-chart {
-    border-radius: 0 0 6px 6px;
   }
 
   #component-app-middle {
