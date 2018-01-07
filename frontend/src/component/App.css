@@ -34,12 +34,20 @@
 /* Small screens turn the sidebar into a Header */
 @media all and (max-width: 800px) {
   #component-sidebar  {
-    background-color: pink;
     max-width: unset;
-    max-height: 100px;
+    max-height: 75px;
     flex-flow: row;
     align-items: center;
     justify-content: space-between;
+    border-radius: 6px 6px 0 0;
+  }
+
+  #component-sidebar > *  {
+    margin: 0 15px 0 15px;
+  }
+
+  #component-chart {
+    border-radius: 0 0 6px 6px;
   }
 
   #component-app-middle {
