@@ -10,3 +10,4 @@ lib
 *.env
 node_modules/
 
+build/
