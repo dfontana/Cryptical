@@ -1,0 +1,36 @@
+#component-sidebar {
+  height: 100%;
+  max-width: 200px;
+  background-color: rgb(48, 48, 48);
+  border-radius: 6px 0 0 6px;
+
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+}
+
+#component-sidebar > * {
+  height: 50px;
+
+  background-color: rgb(75, 75, 75);
+  color: mediumspringgreen;
+  font-size: 24px;
+  font-style: bold;
+
+  /* Vertically center text */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin: 15px 15px 0 15px;
+
+  /* Button effects */
+  cursor: pointer;
+  transition-duration: 0.4s;
+  border: 3px solid mediumspringgreen;
+  border-radius: 6px;
+}
+
+#component-sidebar > *:hover {
+  background-color: mediumspringgreen;
+  color: rgb(48, 48, 48);
+}

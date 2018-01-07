@@ -1,0 +1,35 @@
+#component-header {
+  height: 100%;
+  width: 100%;
+
+  /** Font */
+  background-color: rgb(48, 48, 48);
+  color: mediumspringgreen;
+  font-size: 36px;
+
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+#component-header-icon {
+  width: 100px;
+  height: 100%;
+  font-size: 20px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#component-header-title {
+  width: 300px;
+  height: 100%;
+
+  /** Center and offset text */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 10px;
+}

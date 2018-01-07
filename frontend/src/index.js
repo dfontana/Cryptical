@@ -1,10 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
+import App from './component/App';
+import './index.css'
 
-function Welcome(props) {
-  return <h1>Hello, {props.name}</h1>
-}
-
-const element = <Welcome name="Cryptical" />
-ReactDOM.render(element, document.getElementById('root'))
+ReactDOM.render(<App />, document.getElementById("root"))

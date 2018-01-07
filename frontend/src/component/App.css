@@ -1,0 +1,49 @@
+#component-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/** Banner */
+#component-app-top {
+  height: 75px;
+}
+
+/** Plotting region */
+#component-app-middle {
+  margin: 10px;
+  display: flex;
+  flex-direction: row;
+  flex: 2;
+}
+
+#component-app-middle > * {
+  flex: 1;
+}
+
+#chart {
+  flex: 2;
+}
+
+/** Additional stats and info */
+#component-app-bottom {
+  flex: 1;
+}
+
+
+/* Small screens turn the sidebar into a Header */
+@media all and (max-width: 800px) {
+  #component-sidebar  {
+    background-color: pink;
+    max-width: unset;
+    max-height: 100px;
+    flex-flow: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  #component-app-middle {
+    display: flex;
+    flex-direction: column;
+  }
+}

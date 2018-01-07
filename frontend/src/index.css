@@ -1,3 +1,5 @@
-h1 {
-  color: red;
+/* Styles for the overall page (IE body, root) */
+body {
+  background-color: rgb(19, 19, 19);
+  margin: 0;
 }
