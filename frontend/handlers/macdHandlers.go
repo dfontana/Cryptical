@@ -43,17 +43,7 @@ func ModelMACD(ctx *m.Context, mmr MacdModelRequest) {
 		return
 	}
 
-	var res []MacdModelResponse
-	for i := range model.Time {
-		res = append(res, MacdModelResponse{
-			Time:   model.Time[i],
-			MACD:   model.MACD[i],
-			Signal: model.Signal[i],
-			Hist:   model.Hist[i],
-		})
-	}
-
-	ctx.JSON(200, res)
+	ctx.JSON(200, model)
 }
 
 // SimulateMACD returns a simulation of the given MACD model from the given

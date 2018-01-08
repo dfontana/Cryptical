@@ -24,7 +24,7 @@ type MACD struct {
 	Hist   []float64   // Historgram values
 
 	// Trading Strategy based on model
-	Strategy func(m *MACD) Action
+	Strategy func(m *MACD) Action `json:"-"`
 }
 
 // AddPoint inserts a new data point to the already computed model. If the
