@@ -5,7 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/dfontana/Cryptical/frontend/routes"
+	handle "github.com/dfontana/Cryptical/frontend/handlers"
+	"github.com/go-macaron/binding"
 	macaron "gopkg.in/macaron.v1"
 )
 
@@ -23,7 +24,15 @@ func main() {
 	m.Use(macaron.Renderer())
 
 	// Builds the REST API
-	m.Group("/api", routes.Build(m))
+	m.Group("/api", func() {
+		m.Get("/", handle.SendPing)
+		m.Group("/model", func() {
+			m.Post("/macd", binding.Json(handle.MacdModelRequest{}), handle.ModelMACD)
+		})
+		m.Group("/simulate", func() {
+			m.Post("/macd", handle.SimulateMACD)
+		})
+	})
 
 	// Serve.
 	log.Println("Listening on 8080")
