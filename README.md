@@ -52,6 +52,7 @@ Then you may proceed to start the server (`go run server.go`).
 - github.com/preichenberger/go-gdax
 - github.com/wcharczuk/go-chart
 - github.com/joho/godotenv
+- github.com/go-chi/chi
 
 ## Others
 

@@ -4,6 +4,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/dfontana/Cryptical/frontend/routes"
+	macaron "gopkg.in/macaron.v1"
 )
 
 func main() {
@@ -12,14 +15,17 @@ func main() {
 		log.Fatal("failed to open build dir")
 	}
 
-	// Handle requests to Static
-	fs := http.FileServer(http.Dir("static"))
-	http.Handle("/static/", http.StripPrefix("/static/", fs))
+	// Router
+	m := macaron.New()
+	m.Use(macaron.Logger())
+	m.Use(macaron.Recovery())
+	m.Use(macaron.Static("build"))
+	m.Use(macaron.Renderer())
 
-	// Serve the entry-point
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "index.html")
-	})
+	// Builds the REST API
+	m.Group("/api", routes.Build(m))
+
+	// Serve.
 	log.Println("Listening on 8080")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", m)
 }
