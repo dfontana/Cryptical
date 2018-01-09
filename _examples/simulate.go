@@ -20,7 +20,7 @@ func main() {
 	  ============================================ **/
 	// Day in history I'd like to infer for, -1 day since Historic is inclusive)
 	// So if I want to infer for the 21st, I must ask for up to the 20th's of data
-	endDate := time.Date(2017, time.December, 20, 23, 59, 59, 0, time.Local)
+	endDate := time.Date(2017, time.December, 1, 23, 59, 59, 0, time.Local)
 
 	// These are in 5 min periods meaining we look back 12, 5, and 3.5 hours
 	slow := 26
@@ -125,6 +125,6 @@ func main() {
 	/** ============================================
 	=============== SIMULATION STEP ================
 	============================================ **/
-	tf := bot.Timeframe{endDate, gran, 24 * time.Hour}
+	tf := bot.Timeframe{endDate, gran, 24 * 31 * time.Hour}
 	bot.Simulate(&comp, &pf, tf)
 }
