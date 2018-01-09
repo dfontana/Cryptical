@@ -40,7 +40,7 @@ func main() {
 	for i, val := range records {
 		hist[i] = computation.TimeSeries{
 			val.Date.Time,
-			val.High,
+			val.WeightedAverage,
 		}
 	}
 
